@@ -20,23 +20,26 @@ const connection = new Pool({
 });
 connection.connect((err) => err && console.log(err));
 
-// Route 1: GET /author/:type
-const author = async function(req, res) {
-  // TODO (TASK 1): replace the values of name and pennkey with your own
-  const name = 'Wenbo Jiao';
-  const pennkey = 'wenboj';
+// Route 1: GET /track/track_id
+const track = async function(req, res) {
 
-  // checks the value of type in the request parameters
-  // note that parameters are required and are specified in server.js in the endpoint by a colon (e.g. /author/:type)
-  if (req.params.type === 'name') {
-    // res.json returns data back to the requester via an HTTP response
-    res.json({ data: name });
-  } else if (req.params.type === 'pennkey') {
-    // TODO (TASK 2): edit the else if condition to check if the request parameter is 'pennkey' and if so, send back a JSON response with the pennkey
-    res.json({ data: pennkey });
-  } else {
-    res.status(400).json({});
+  const track_id = req.params.track_id;
+
+  connection.query(`
+    SELECT *
+    FROM spotify_tracks
+    WHERE track_id = $1
+  `, [track_id], (err, data) => {
+    if (err) {
+      console.log(err);
+      res.json({});
+    } else if (data.rows.length === 0) {
+      res.status(404).json({message: 'Track not found'});
+    } else {
+      res.json(data.rows[0]);
+    }
   }
+  )
 }
 
 // Route 2: GET /random
