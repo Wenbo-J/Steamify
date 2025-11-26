@@ -1,58 +1,195 @@
+/* --- 1. TAILWIND DIRECTIVES --- */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --- 2. FONTS & VARIABLES --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 :root {
-  --bg-color: #050505;
-  --surface-color: #121212;
-  --text-main: #e0e0e0;
-  --text-muted: #505050;
-  --accent: #00ff94; /* Cyber-green */
-  --danger: #ff4040;
-  --font-mono: 'Space Mono', monospace; /* Import this from Google Fonts */
-  --font-sans: 'Inter', sans-serif;      /* Import this from Google Fonts */
+  --bg-color: #000000;
+  --surface-glass: rgba(28, 28, 30, 0.75);
+  --text-main: #FFFFFF;
+  --text-secondary: #B3B3B3;
+  --accent-solid: #0A84FF;
+  /* Spotify Colors */
+  --spotify-green: #1DB954;
+  --spotify-green-hover: #1ed760;
+  --spotify-dark: #121212;
+  /* Steam Colors */
+  --steam-blue: #66C0F4;
+  --steam-blue-dark: #1B2838;
+  --steam-accent: #4C6B22;
+  /* Combined Accents */
+  --accent-primary: #1DB954; /* Spotify green */
+  --accent-secondary: #66C0F4; /* Steam blue */
+  --accent-gradient: linear-gradient(135deg, #1DB954 0%, #66C0F4 100%);
+  --border-subtle: rgba(255, 255, 255, 0.15);
+  --font-sans: 'Inter', sans-serif;
+  --radius-lg: 18px;
 }
 
-body {
+/* --- 3. GLOBAL RESET --- */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
   background-color: var(--bg-color);
   color: var(--text-main);
   font-family: var(--font-sans);
-  margin: 0;
-  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom Scrollbar for that 'Terminal' feel */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: var(--bg-color); }
-::-webkit-scrollbar-thumb { background: var(--surface-color); border: 1px solid var(--text-muted); }
-::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+/* Fixes the "Crammed" issue by forcing React to fill the window */
+#root {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+}
 
-.mono { font-family: var(--font-mono); }
-.text-accent { color: var(--accent); }
-
-/* Utility for the "Glass" card effect */
+/* --- 4. YOUR CUSTOM STYLES --- */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--surface-glass);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
 }
 
 .glass-panel:hover {
-  border-color: var(--accent);
-  transform: translateY(-2px);
+  box-shadow: 
+    0 12px 40px rgba(29, 185, 84, 0.15),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
-.btn-primary {
-  background: transparent;
-  border: 1px solid var(--text-main);
-  color: var(--text-main);
-  padding: 12px 24px;
-  font-family: var(--font-mono);
+.glass-nav {
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--border-subtle);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.text-label {
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
-  cursor: pointer;
-  transition: 0.2s;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
 }
 
+/* Spotify-style Slider */
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  background: transparent;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  margin-top: -6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+input[type=range]::-webkit-slider-thumb:hover {
+  height: 18px;
+  width: 18px;
+  box-shadow: 0 2px 12px rgba(29, 185, 84, 0.6);
+  background: var(--spotify-green);
+}
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  background: #3A3A3C;
+  border-radius: 2px;
+  transition: background 0.2s ease;
+}
+input[type=range]:hover::-webkit-slider-runnable-track {
+  background: #4A4A4C;
+}
+
+/* Buttons - Spotify & Steam Inspired */
+.btn-primary {
+  background: var(--spotify-green);
+  color: #000000;
+  border: none;
+  border-radius: 99px;
+  padding: 14px 32px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(29, 185, 84, 0.3);
+  letter-spacing: 0.5px;
+}
 .btn-primary:hover {
-  background: var(--accent);
-  color: var(--bg-color);
-  border-color: var(--accent);
-  box-shadow: 0 0 15px var(--accent);
+  background: var(--spotify-green-hover);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(29, 185, 84, 0.4);
+}
+.btn-primary:active {
+  transform: translateY(0) scale(1);
+}
+
+.btn-secondary {
+  background: rgba(102, 192, 244, 0.15);
+  color: var(--steam-blue);
+  border: 1px solid rgba(102, 192, 244, 0.3);
+  border-radius: 99px;
+  padding: 14px 32px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  letter-spacing: 0.3px;
+}
+.btn-secondary:hover { 
+  background: rgba(102, 192, 244, 0.25);
+  border-color: var(--steam-blue);
+  color: #FFFFFF;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(102, 192, 244, 0.3);
+}
+.btn-secondary:active {
+  transform: translateY(0);
+}
+
+/* Noise Texture (The Polish) */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* Ensure all containers expand properly */
+body > #root {
+  width: 100%;
+  min-width: 100%;
+}
+
+/* Prevent any default browser margins/padding */
+html {
+  overflow-x: hidden;
+  overflow-y: auto;
 }

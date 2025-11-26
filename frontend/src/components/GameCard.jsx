@@ -1,33 +1,37 @@
 import React from 'react';
 
 const GameCard = ({ game }) => {
-  // Expecting game object from your Steam table
   return (
-    <div className="glass-panel p-6 flex flex-col h-full group relative overflow-hidden">
-      {/* Hover Highlight */}
-      <div className="absolute top-0 left-0 w-1 h-full bg-accent opacity-0 group-hover:opacity-100 transition-opacity" />
+    <div className="glass-panel p-0 group cursor-pointer hover:shadow-2xl hover:shadow-[#1DB954]/30 transition-all duration-300 hover:-translate-y-2 border border-white/5 hover:border-[#66C0F4]/40 overflow-hidden relative">
+      {/* Steam-style hover glow effect */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#1DB954]/0 via-[#66C0F4]/0 to-purple-600/0 group-hover:from-[#1DB954]/10 group-hover:via-[#66C0F4]/10 group-hover:to-purple-600/10 transition-all duration-300 pointer-events-none z-10"></div>
       
-      <div className="flex justify-between items-start mb-4">
-        <span className="mono text-[10px] text-accent border border-accent px-1 rounded">
-          ID: {game.game_id}
-        </span>
-        <span className="mono text-[10px] text-gray-500">
-          {game.release_date || 'N/A'}
-        </span>
+      {/* Image / Header Placeholder - Spotify gradient overlay */}
+      <div className="h-44 md:h-48 bg-gradient-to-br from-gray-800 via-gray-900 to-black relative overflow-hidden">
+        {/* Pattern overlay */}
+        <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+        
+        {/* Spotify-style gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-[#1DB954]/20 to-transparent group-hover:via-[#1DB954]/30 transition-all duration-300"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-[#66C0F4]/0 to-[#66C0F4]/20 group-hover:to-[#66C0F4]/30 transition-all duration-300"></div>
+        
+        {/* Steam-style Badge */}
+        <div className="absolute top-3 right-3 bg-black/80 backdrop-blur-md text-xs font-black px-3 py-1.5 rounded-lg text-white border border-[#1DB954]/40 shadow-lg shadow-[#1DB954]/20 group-hover:border-[#1DB954] group-hover:shadow-[#1DB954]/40 transition-all">
+            {game.rating ? `${game.rating}%` : 'NR'}
+        </div>
       </div>
 
-      <h3 className="text-2xl font-bold leading-none mb-2 group-hover:text-accent transition-colors">
-        {game.name}
-      </h3>
-      
-      <div className="mt-auto space-y-2 pt-4">
-        <div className="flex justify-between mono text-xs text-gray-400">
-          <span>GENRE</span>
-          <span className="text-white text-right">{game.genres || 'Unknown'}</span>
-        </div>
-        <div className="flex justify-between mono text-xs text-gray-400">
-          <span>RATING</span>
-          <span className="text-white">{game.rating ? `${game.rating}%` : 'N/A'}</span>
+      <div className="p-5 md:p-6 relative z-20">
+        <h3 className="font-black text-lg md:text-xl leading-tight mb-2 text-white group-hover:text-[#1DB954] transition-colors line-clamp-2 min-h-[3rem]">
+            {game.name}
+        </h3>
+        <p className="text-sm text-gray-400 mb-4 line-clamp-1 group-hover:text-gray-300 transition-colors">{game.genres || 'Genre N/A'}</p>
+        
+        <div className="flex justify-between items-center border-t border-white/10 group-hover:border-[#66C0F4]/30 pt-4 mt-2 transition-colors">
+            <span className="text-[10px] uppercase font-bold text-gray-500 group-hover:text-[#66C0F4] tracking-wider transition-colors">ID: {game.game_id}</span>
+            <span className="text-xs text-[#66C0F4] font-bold group-hover:text-[#1DB954] group-hover:translate-x-1 transition-all inline-flex items-center gap-1">
+              Details <span className="text-base">&rarr;</span>
+            </span>
         </div>
       </div>
     </div>
