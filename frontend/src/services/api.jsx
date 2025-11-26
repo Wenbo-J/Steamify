@@ -1,4 +1,4 @@
-import config from '../config.json'; // Optional: store BASE_URL here
+// import config from '../config.json'; // Optional: store BASE_URL here
 
 const BASE_URL = 'http://localhost:8080'; // Change to your actual backend port
 
