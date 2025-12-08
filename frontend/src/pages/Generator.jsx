@@ -12,9 +12,9 @@ const Generator = () => {
     setTimeout(() => {
         // MOCK DATA for design purposes - connect your real API here
         setPlaylist([
-            { name: "Cybervoid", artist: "Stellar", duration_ms: 240000 },
-            { name: "Nightcall", artist: "Kavinsky", duration_ms: 210000 },
-            { name: "Resonance", artist: "Home", duration_ms: 195000 },
+            { name: "Cybervoid", artist: "Stellar", duration_s: 24000 },
+            { name: "Nightcall", artist: "Kavinsky", duration_s: 21000 },
+            { name: "Resonance", artist: "Home", duration_s: 19500 },
         ]);
         setLoading(false);
     }, 1500);
