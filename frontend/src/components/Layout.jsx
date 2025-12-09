@@ -32,15 +32,16 @@ const Layout = ({ children }) => {
         <Link to="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity group">
           {/* Logo Icon - Spotify & Steam Inspired */}
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#1DB954] via-[#1DB954] to-[#66C0F4] flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-[#1DB954]/40 group-hover:shadow-[#1DB954]/60 transition-shadow">
-            AS
+            SF
           </div>
-          <span className="font-bold text-lg tracking-tight text-white group-hover:text-[#1DB954] transition-colors">AudioSync</span>
+          <span className="font-bold text-lg tracking-tight text-white group-hover:text-[#1DB954] transition-colors">Steamify</span>
         </Link>
 
         <div className="hidden md:flex gap-1 bg-white/5 p-1 rounded-full border border-white/10 backdrop-blur-xl shadow-lg">
           <NavLink to="/" label="Home" />
-          <NavLink to="/generator" label="Generator" />
-          <NavLink to="/browser" label="Library" />
+          <NavLink to="/browse" label="Browse Music" />
+          <NavLink to="/playlists" label="My Playlists" />
+          <NavLink to="/analytics" label="Analytics" />
         </div>
 
         {/* Mobile menu button placeholder */}
