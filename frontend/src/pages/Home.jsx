@@ -37,19 +37,19 @@ const Home = () => {
   return (
     <div className="space-y-8">
       <div className="text-center mb-12">
-        <h1 className="text-6xl md:text-7xl lg:text-8xl font-black mb-6 bg-clip-text text-transparent bg-gradient-to-r from-[#1DB954] via-white to-[#1B2838] drop-shadow-2xl">
+        <h1 className="text-6xl md:text-7xl lg:text-8xl font-black mb-6 bg-clip-text text-transparent bg-gradient-to-r from-[#1DB954] via-[#EDEDED] to-[#53C8F3] drop-shadow-2xl">
           Steamify
         </h1>
-        <p className="text-gray-300 text-xl md:text-2xl max-w-2xl mx-auto leading-relaxed">
-          Find the perfect <span className="text-[#1DB954] font-semibold">Spotify</span> soundtrack for your <span className="text-[#1B2838] font-semibold">Steam</span> gaming session
+        <p className="text-[#A5A5A5] text-xl md:text-2xl max-w-2xl mx-auto leading-relaxed">
+          Find the perfect <span className="text-[#1DB954] font-semibold">Spotify</span> soundtrack for your <span className="text-[#53C8F3] font-semibold">Steam</span> gaming session
         </p>
       </div>
 
-      {/* Search Bar */}
-      <div className="glass-panel p-6 max-w-3xl mx-auto">
+      {/* Premium Search Bar */}
+      <div className="glass-panel p-8 max-w-4xl mx-auto animate-fade-in bg-gradient-to-r from-white/[0.02] to-transparent">
         <div className="flex items-center gap-4">
           <div className="flex-1 relative">
-            <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-[#a0a0a0] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
@@ -57,7 +57,7 @@ const Home = () => {
               placeholder="Search for a game..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#1DB954] focus:bg-white/10 transition-all text-lg"
+              className="w-full bg-gradient-to-r from-white/[0.06] to-white/[0.03] border border-white/15 rounded-2xl pl-14 pr-6 py-5 text-[#EDEDED] placeholder-[#6b6b6b] focus:outline-none focus:ring-2 focus:ring-[#1DB954]/50 focus:bg-white/[0.08] transition-all text-base font-medium backdrop-blur-sm"
             />
           </div>
         </div>
@@ -77,46 +77,50 @@ const Home = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredGames.map((game) => (
+          {filteredGames.map((game, index) => (
             <div
               key={game.game_id}
               onClick={() => handleGameSelect(game)}
-              className="glass-panel p-0 group cursor-pointer hover:shadow-2xl hover:shadow-[#1DB954]/20 transition-all duration-300 hover:-translate-y-2 border border-white/10 hover:border-[#1DB954]/50 overflow-hidden relative"
+              className="glass-panel p-0 group cursor-pointer hover:shadow-2xl hover:shadow-[#1DB954]/30 transition-all duration-500 hover:-translate-y-3 border border-white/10 hover:border-[#1DB954]/60 overflow-hidden relative animate-fade-in"
+              style={{ animationDelay: `${index * 50}ms` }}
             >
-              {/* Steam-style hover glow effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-[#1DB954]/0 via-[#1B2838]/0 to-[#2a475e]/0 group-hover:from-[#1DB954]/10 group-hover:via-[#1B2838]/10 group-hover:to-[#2a475e]/10 transition-all duration-300 pointer-events-none z-10"></div>
+              {/* Premium hover glow effect */}
+              <div className="absolute inset-0 bg-gradient-to-br from-[#1DB954]/0 via-[#1B2838]/0 to-[#2a475e]/0 group-hover:from-[#1DB954]/15 group-hover:via-[#1B2838]/15 group-hover:to-[#2a475e]/15 transition-all duration-500 pointer-events-none z-10"></div>
               
-              {/* Image / Header Placeholder */}
-              <div className="h-44 md:h-48 bg-gradient-to-br from-gray-800 via-[#1B2838] to-black relative overflow-hidden">
-                {/* Pattern overlay */}
-                <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+              {/* Premium Image / Header */}
+              <div className="h-52 md:h-56 bg-gradient-to-br from-[#1a2332] via-[#233447] to-[#1f2838] relative overflow-hidden">
+                {/* Subtle pattern overlay */}
+                <div className="absolute inset-0 opacity-[0.15] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" style={{ mixBlendMode: 'overlay' }}></div>
                 
-                {/* Spotify + Steam gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-[#1DB954]/20 to-transparent group-hover:via-[#1DB954]/30 transition-all duration-300"></div>
-                <div className="absolute inset-0 bg-gradient-to-br from-[#1B2838]/0 to-[#1B2838]/30 group-hover:to-[#1B2838]/40 transition-all duration-300"></div>
+                {/* Premium gradient overlays */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-[#1DB954]/15 to-transparent group-hover:via-[#1DB954]/25 transition-all duration-500"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-[#1B2838]/0 to-[#1B2838]/40 group-hover:to-[#1B2838]/50 transition-all duration-500"></div>
                 
-                {/* Rating Badge */}
+                {/* Shine effect on hover */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                
+                {/* Premium Rating Badge */}
                 {game.rating && (
-                  <div className="absolute top-3 right-3 bg-black/80 backdrop-blur-md text-xs font-black px-3 py-1.5 rounded-lg text-white border border-[#1DB954]/40 shadow-lg shadow-[#1DB954]/20 group-hover:border-[#1DB954] group-hover:shadow-[#1DB954]/40 transition-all">
+                  <div className="absolute top-4 right-4 bg-gradient-to-br from-black/90 to-black/70 backdrop-blur-xl text-xs font-black px-4 py-2 rounded-xl text-white border border-[#1DB954]/40 shadow-2xl shadow-[#1DB954]/20 group-hover:border-[#1DB954] group-hover:shadow-[#1DB954]/40 group-hover:scale-105 transition-all duration-300">
                     {game.rating}%
                   </div>
                 )}
               </div>
 
-              <div className="p-5 md:p-6 relative z-20">
-                <h3 className="font-black text-lg md:text-xl leading-tight mb-2 text-white group-hover:text-[#1DB954] transition-colors line-clamp-2 min-h-[3rem]">
+              <div className="p-6 md:p-7 relative z-20">
+                <h3 className="font-black text-xl md:text-2xl leading-tight mb-3 text-[#EDEDED] group-hover:text-[#1DB954] transition-colors duration-300 line-clamp-2 min-h-[3.5rem]">
                   {game.name}
                 </h3>
-                <p className="text-sm text-gray-400 mb-4 line-clamp-1 group-hover:text-gray-300 transition-colors">
+                <p className="text-sm text-[#A5A5A5] mb-5 line-clamp-1 group-hover:text-[#EDEDED] transition-colors duration-300 font-medium">
                   {game.genres || game.genre_list || 'Genre N/A'}
                 </p>
                 
-                <div className="flex justify-between items-center border-t border-white/10 group-hover:border-[#1B2838]/50 pt-4 mt-2 transition-colors">
-                  <span className="text-[10px] uppercase font-bold text-gray-500 group-hover:text-[#1B2838] tracking-wider transition-colors">
+                <div className="flex justify-between items-center border-t border-white/10 group-hover:border-[#1DB954]/30 pt-5 mt-3 transition-colors duration-300">
+                  <span className="text-[10px] uppercase font-bold text-[#6b6b6b] group-hover:text-[#53C8F3] tracking-wider transition-colors duration-300">
                     {game.game_id}
                   </span>
-                  <span className="text-xs text-[#1B2838] font-bold group-hover:text-[#1DB954] group-hover:translate-x-1 transition-all inline-flex items-center gap-1">
-                    View Tracks <span className="text-base">&rarr;</span>
+                  <span className="text-sm text-[#53C8F3] font-bold group-hover:text-[#1DB954] group-hover:translate-x-2 transition-all duration-300 inline-flex items-center gap-2">
+                    View Tracks <span className="text-lg">&rarr;</span>
                   </span>
                 </div>
               </div>
@@ -125,25 +129,25 @@ const Home = () => {
         </div>
       )}
 
-      {/* Stats Footer */}
-      <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-8 border-t border-white/20 pt-12 max-w-4xl mx-auto">
+      {/* Premium Stats Footer */}
+      <div className="mt-20 grid grid-cols-1 sm:grid-cols-3 gap-8 border-t border-white/10 pt-16 max-w-5xl mx-auto">
         <div className="text-center group">
-          <div className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#1DB954] to-white mb-2 group-hover:from-[#1ed760] transition-all">
+          <div className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#1DB954] to-white mb-3 group-hover:from-[#1ed760] transition-all duration-300">
             {games.length}
           </div>
-          <div className="text-xs sm:text-sm text-gray-400 uppercase tracking-wider font-bold">Games Available</div>
+          <div className="text-xs sm:text-sm text-[#A5A5A5] uppercase tracking-widest font-bold">Games Available</div>
         </div>
         <div className="text-center group">
-          <div className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#1B2838] to-white mb-2 group-hover:from-[#2a475e] transition-all">
+          <div className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#53C8F3] to-[#EDEDED] mb-3 group-hover:from-[#66C0F4] transition-all duration-300">
             ∞
           </div>
-          <div className="text-xs sm:text-sm text-gray-400 uppercase tracking-wider font-bold">Tracks Matched</div>
+          <div className="text-xs sm:text-sm text-[#A5A5A5] uppercase tracking-widest font-bold">Tracks Matched</div>
         </div>
         <div className="text-center group">
-          <div className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#1DB954] via-white to-[#1B2838] mb-2 transition-all">
+          <div className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#1DB954] via-[#EDEDED] to-[#53C8F3] mb-3 transition-all duration-300">
             100%
           </div>
-          <div className="text-xs sm:text-sm text-gray-400 uppercase tracking-wider font-bold">Immersion</div>
+          <div className="text-xs sm:text-sm text-[#A5A5A5] uppercase tracking-widest font-bold">Immersion</div>
         </div>
       </div>
     </div>
