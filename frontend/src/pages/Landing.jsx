@@ -10,7 +10,7 @@ const Landing = () => {
       <div className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] bg-purple-600 rounded-full blur-[120px] opacity-12 pointer-events-none z-0" />
 
       <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-br from-white via-[#1DB954] to-[#66C0F4] relative z-10 drop-shadow-2xl">
-        AudioSync.
+        Steamify.
       </h1>
       
       <p className="text-lg sm:text-xl md:text-2xl text-gray-300 max-w-2xl mb-12 leading-relaxed font-normal relative z-10 px-4">

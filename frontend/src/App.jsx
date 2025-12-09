@@ -1,19 +1,20 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
-import Landing from './pages/Landing';
-import Generator from './pages/Generator';
-import Browser from './pages/Browser';
+import Home from './pages/Home';
+import BrowseMusic from './pages/BrowseMusic';
+import UserPlaylists from './pages/UserPlaylists';
+import Analytics from './pages/Analytics';
 
 function App() {
   return (
     <Router>
       <Layout>
         <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/generator" element={<Generator />} />
-          <Route path="/browser" element={<Browser />} />
-          {/* Add more routes (About, etc.) as needed */}
+          <Route path="/" element={<Home />} />
+          <Route path="/browse" element={<BrowseMusic />} />
+          <Route path="/playlists" element={<UserPlaylists />} />
+          <Route path="/analytics" element={<Analytics />} />
         </Routes>
       </Layout>
     </Router>
