@@ -43,7 +43,7 @@ const BrowseMusic = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-4xl md:text-5xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white via-[#1DB954] to-[#66C0F4]">
+          <h1 className="text-4xl md:text-5xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white via-[#1DB954] to-[#1B2838]">
             Browse Music
           </h1>
           <p className="text-gray-300">Explore all available tracks in the database</p>
@@ -74,7 +74,7 @@ const BrowseMusic = () => {
               onClick={() => handleTrackClick(track.track_id)}
               className="glass-panel p-4 cursor-pointer hover:bg-white/10 transition-all hover:border-[#1DB954]/50"
             >
-              <div className="w-full h-32 bg-gradient-to-br from-[#1DB954]/30 to-[#66C0F4]/30 rounded-lg mb-3 flex items-center justify-center text-white font-bold text-2xl">
+              <div className="w-full h-32 bg-gradient-to-br from-[#1DB954]/30 to-[#1B2838]/30 rounded-lg mb-3 flex items-center justify-center text-white font-bold text-2xl">
                 {track.name?.charAt(0) || '?'}
               </div>
               <h3 className="font-semibold text-white truncate mb-1">{track.name || 'Unknown'}</h3>
