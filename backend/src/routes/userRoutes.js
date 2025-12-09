@@ -27,7 +27,7 @@ const track = async function(req, res) {
 
   connection.query(`
     SELECT *
-    FROM spotify_tracks
+    FROM "Spotify"
     WHERE track_id = $1
   `, [track_id], (err, data) => {
     if (err) {
