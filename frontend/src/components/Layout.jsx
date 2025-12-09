@@ -9,35 +9,45 @@ const Layout = ({ children }) => {
     return (
       <Link 
         to={to} 
-        className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
+        className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 relative ${
           active 
-          ? 'bg-gradient-to-r from-[#1DB954] to-[#1B2838] text-white shadow-lg shadow-[#1DB954]/30' 
-          : 'text-gray-400 hover:text-white hover:bg-white/10'
+          ? 'bg-gradient-to-r from-[#1DB954] to-[#53C8F3] text-black shadow-xl shadow-[#1DB954]/40' 
+          : 'text-[#A5A5A5] hover:text-[#EDEDED] hover:bg-white/5'
         }`}
       >
-        {label}
+        {active && (
+          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-white/10 to-transparent opacity-50" />
+        )}
+        <span className="relative z-10">{label}</span>
       </Link>
     );
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col relative bg-black overflow-x-hidden">
-      {/* Background Ambience - Spotify & Steam Inspired */}
-      <div className="fixed top-[-20%] left-[-10%] w-[60%] h-[60%] bg-[#1DB954] rounded-full blur-[140px] opacity-15 pointer-events-none z-0 animate-pulse" style={{animationDuration: '8s'}} />
-      <div className="fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#1B2838] rounded-full blur-[120px] opacity-20 pointer-events-none z-0" />
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40%] h-[40%] bg-[#2a475e] rounded-full blur-[100px] opacity-12 pointer-events-none z-0" />
+    <div className="min-h-screen w-full flex flex-col relative bg-gradient-to-b from-[#1a2332] via-[#233447] to-[#1B2838] overflow-x-hidden">
+      {/* Premium Background Ambience - Lightened & Refined */}
+      <div className="fixed top-[-15%] left-[-5%] w-[70%] h-[70%] bg-[#1DB954] rounded-full blur-[180px] opacity-[0.08] pointer-events-none z-0 animate-pulse" style={{animationDuration: '12s'}} />
+      <div className="fixed bottom-[-5%] right-[-5%] w-[60%] h-[60%] bg-[#53C8F3] rounded-full blur-[160px] opacity-[0.08] pointer-events-none z-0" />
+      
+      {/* Subtle light overlay for brightness */}
+      <div className="fixed inset-0 bg-gradient-to-b from-white/[0.02] via-transparent to-transparent pointer-events-none z-0" />
+      
+      {/* Subtle grid overlay - very minimal */}
+      <div className="fixed inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:50px_50px] pointer-events-none z-0 opacity-25" />
 
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 glass-nav h-16 flex items-center justify-between px-4 sm:px-6 md:px-12">
-        <Link to="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity group">
-          {/* Logo Icon - Spotify & Steam Inspired */}
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#1DB954] via-[#1DB954] to-[#1B2838] flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-[#1DB954]/40 group-hover:shadow-[#1DB954]/60 transition-shadow">
-            SF
-          </div>
-          <span className="font-bold text-lg tracking-tight text-white group-hover:text-[#1DB954] transition-colors">Steamify</span>
+      <nav className="fixed top-0 w-full z-50 glass-nav h-20 flex items-center justify-between px-6 sm:px-8 md:px-16">
+        <Link to="/" className="flex items-center gap-3 hover:opacity-90 transition-all duration-300 group">
+          {/* Logo Icon - Spotify green to Cyan gradient */}
+          <img
+            src="/logo.png"
+            alt="Steamify Logo"
+            className="relative w-10 h-10 rounded-xl shadow-xl shadow-[#1DB954]/30 group-hover:shadow-[#1DB954]/50 transition-all duration-300 group-hover:scale-105 object-contain bg-gradient-to-br from-[#1DB954] via-[#1DB954] to-[#53C8F3]"
+          />
+          <span className="font-black text-xl tracking-tight text-[#EDEDED] group-hover:text-[#1DB954] transition-colors duration-300">Steamify</span>
         </Link>
 
-        <div className="hidden md:flex gap-1 bg-white/5 p-1 rounded-full border border-white/10 backdrop-blur-xl shadow-lg">
+        <div className="hidden md:flex gap-2 bg-gradient-to-r from-white/[0.03] to-white/[0.01] p-1.5 rounded-2xl border border-white/10 backdrop-blur-2xl shadow-2xl">
           <NavLink to="/" label="Home" />
           <NavLink to="/browse" label="Browse Music" />
           <NavLink to="/playlists" label="My Playlists" />
@@ -49,7 +59,7 @@ const Layout = ({ children }) => {
       </nav>
 
       {/* Main Content */}
-      <main className="flex-grow w-full pt-24 md:pt-28 px-4 sm:px-6 lg:px-8 pb-12 md:pb-16 max-w-7xl mx-auto relative z-10">
+      <main className="flex-grow w-full pt-28 md:pt-32 px-4 sm:px-6 lg:px-12 pb-16 md:pb-20 max-w-7xl mx-auto relative z-10">
         {children}
       </main>
     </div>
