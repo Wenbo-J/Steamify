@@ -56,9 +56,9 @@ const Analytics = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-4xl md:text-5xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white via-[#1DB954] to-[#66C0F4]">
-          Analytics
-        </h1>
+          <h1 className="text-4xl md:text-5xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white via-[#1DB954] to-[#1B2838]">
+            Analytics
+          </h1>
         <p className="text-gray-300">Data insights and recommendations</p>
       </div>
 

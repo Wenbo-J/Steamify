@@ -17,13 +17,15 @@
   --spotify-green-hover: #1ed760;
   --spotify-dark: #121212;
   /* Steam Colors */
-  --steam-blue: #66C0F4;
-  --steam-blue-dark: #1B2838;
+  --steam-blue: #1B2838;
+  --steam-blue-light: #2a475e;
+  --steam-blue-accent: #66C0F4;
+  --steam-blue-dark: #171a21;
   --steam-accent: #4C6B22;
   /* Combined Accents */
   --accent-primary: #1DB954; /* Spotify green */
-  --accent-secondary: #66C0F4; /* Steam blue */
-  --accent-gradient: linear-gradient(135deg, #1DB954 0%, #66C0F4 100%);
+  --accent-secondary: #1B2838; /* Steam dark blue */
+  --accent-gradient: linear-gradient(135deg, #1DB954 0%, #1B2838 100%);
   --border-subtle: rgba(255, 255, 255, 0.15);
   --font-sans: 'Inter', sans-serif;
   --radius-lg: 18px;
@@ -149,9 +151,9 @@ input[type=range]:hover::-webkit-slider-runnable-track {
 }
 
 .btn-secondary {
-  background: rgba(102, 192, 244, 0.15);
-  color: var(--steam-blue);
-  border: 1px solid rgba(102, 192, 244, 0.3);
+  background: rgba(27, 40, 56, 0.4);
+  color: var(--steam-blue-accent);
+  border: 1px solid rgba(27, 40, 56, 0.6);
   border-radius: 99px;
   padding: 14px 32px;
   font-weight: 600;
@@ -161,11 +163,11 @@ input[type=range]:hover::-webkit-slider-runnable-track {
   letter-spacing: 0.3px;
 }
 .btn-secondary:hover { 
-  background: rgba(102, 192, 244, 0.25);
-  border-color: var(--steam-blue);
+  background: rgba(27, 40, 56, 0.6);
+  border-color: var(--steam-blue-accent);
   color: #FFFFFF;
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(102, 192, 244, 0.3);
+  box-shadow: 0 4px 16px rgba(27, 40, 56, 0.5);
 }
 .btn-secondary:active {
   transform: translateY(0);
