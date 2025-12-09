@@ -43,9 +43,9 @@ const BrowseMusic = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-4xl md:text-5xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white via-[#1DB954] to-[#1B2838]">
-            Browse Music
-          </h1>
+        <h1 className="text-4xl md:text-5xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white via-[#1DB954] to-[#1B2838] bg-[length:400%_100%]">
+          Browse Music
+        </h1>
           <p className="text-gray-300">Explore all available tracks in the database</p>
         </div>
       </div>
