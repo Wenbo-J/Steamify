@@ -1,30 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { getAllGames, getGameRecommendations, createPlaylist } from '../services/api';
+import { useNavigate } from 'react-router-dom';
+import { getAllGames } from '../services/api';
 
 const Home = () => {
   const [games, setGames] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedGame, setSelectedGame] = useState(null);
-  const [recommendations, setRecommendations] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState({
-    sessionMinutes: 60,
-    minEnergy: 0,
-    maxEnergy: 100,
-    minValence: 0,
-    maxValence: 100
-  });
-  const [selectedTracks, setSelectedTracks] = useState(new Set());
-  const [playlistName, setPlaylistName] = useState('');
-  const [creatingPlaylist, setCreatingPlaylist] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadGames = async () => {
+      setLoading(true);
       try {
         const data = await getAllGames();
-        setGames(data);
+        setGames(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error('Failed to load games:', err);
+        setGames([]);
+      } finally {
+        setLoading(false);
       }
     };
     loadGames();
@@ -34,258 +29,121 @@ const Home = () => {
     game.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleGenerate = async () => {
-    if (!selectedGame) return;
-    setLoading(true);
-    try {
-      const data = await getGameRecommendations(
-        selectedGame.game_id,
-        filters.sessionMinutes,
-        filters.minEnergy,
-        filters.maxEnergy,
-        filters.minValence,
-        filters.maxValence
-      );
-      setRecommendations(data);
-      setSelectedTracks(new Set());
-    } catch (err) {
-      console.error('Failed to generate recommendations:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const toggleTrackSelection = (trackId) => {
-    const newSelected = new Set(selectedTracks);
-    if (newSelected.has(trackId)) {
-      newSelected.delete(trackId);
-    } else {
-      newSelected.add(trackId);
-    }
-    setSelectedTracks(newSelected);
-  };
-
-  const handleCreatePlaylist = async () => {
-    if (!playlistName.trim() || selectedTracks.size === 0) {
-      alert('Please enter a playlist name and select at least one track');
-      return;
-    }
-    setCreatingPlaylist(true);
-    try {
-      const trackIds = Array.from(selectedTracks);
-      const result = await createPlaylist(playlistName, trackIds);
-      if (result.playlist_id) {
-        alert('Playlist created successfully!');
-        setPlaylistName('');
-        setSelectedTracks(new Set());
-      }
-    } catch (err) {
-      console.error('Failed to create playlist:', err);
-      alert('Failed to create playlist');
-    } finally {
-      setCreatingPlaylist(false);
-    }
+  const handleGameSelect = (game) => {
+    // Navigate to tracks page with game ID
+    navigate(`/tracks/${game.game_id}`, { state: { game } });
   };
 
   return (
     <div className="space-y-8">
-      <div className="text-center mb-8">
-        <h1 className="text-5xl md:text-6xl font-black mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white via-[#1DB954] to-[#66C0F4]">
+      <div className="text-center mb-12">
+        <h1 className="text-6xl md:text-7xl lg:text-8xl font-black mb-6 bg-clip-text text-transparent bg-gradient-to-r from-[#1DB954] via-white to-[#1B2838] drop-shadow-2xl">
           Steamify
         </h1>
-        <p className="text-gray-300 text-lg">Find the perfect soundtrack for your gaming session</p>
+        <p className="text-gray-300 text-xl md:text-2xl max-w-2xl mx-auto leading-relaxed">
+          Find the perfect <span className="text-[#1DB954] font-semibold">Spotify</span> soundtrack for your <span className="text-[#1B2838] font-semibold">Steam</span> gaming session
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Game Selection */}
-        <div className="lg:col-span-1 space-y-4">
-          <div className="glass-panel p-6">
-            <h2 className="text-xl font-bold mb-4 text-white">Select Game</h2>
+      {/* Search Bar */}
+      <div className="glass-panel p-6 max-w-3xl mx-auto">
+        <div className="flex items-center gap-4">
+          <div className="flex-1 relative">
+            <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
             <input
               type="text"
-              placeholder="Search games..."
+              placeholder="Search for a game..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#1DB954] mb-4"
+              className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#1DB954] focus:bg-white/10 transition-all text-lg"
             />
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {filteredGames.map((game) => (
-                <div
-                  key={game.game_id}
-                  onClick={() => {
-                    setSelectedGame(game);
-                    setRecommendations([]);
-                  }}
-                  className={`p-3 rounded-lg cursor-pointer transition-all ${
-                    selectedGame?.game_id === game.game_id
-                      ? 'bg-gradient-to-r from-[#1DB954]/30 to-[#66C0F4]/30 border-2 border-[#1DB954]'
-                      : 'bg-white/5 border border-white/10 hover:bg-white/10'
-                  }`}
-                >
-                  <h3 className="font-semibold text-white">{game.name}</h3>
-                  <p className="text-sm text-gray-400">Rating: {game.rating || 'N/A'}</p>
-                </div>
-              ))}
-            </div>
           </div>
-
-          {/* Filters */}
-          {selectedGame && (
-            <div className="glass-panel p-6">
-              <h2 className="text-xl font-bold mb-4 text-white">Filters</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-label block mb-2">Session Duration (minutes)</label>
-                  <input
-                    type="number"
-                    min="10"
-                    max="240"
-                    value={filters.sessionMinutes}
-                    onChange={(e) => setFilters({ ...filters, sessionMinutes: parseInt(e.target.value) || 60 })}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
-                  />
-                </div>
-                <div>
-                  <label className="text-label block mb-2">Min Energy: {filters.minEnergy}</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={filters.minEnergy}
-                    onChange={(e) => setFilters({ ...filters, minEnergy: parseInt(e.target.value) })}
-                    className="w-full"
-                  />
-                </div>
-                <div>
-                  <label className="text-label block mb-2">Max Energy: {filters.maxEnergy}</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={filters.maxEnergy}
-                    onChange={(e) => setFilters({ ...filters, maxEnergy: parseInt(e.target.value) })}
-                    className="w-full"
-                  />
-                </div>
-                <div>
-                  <label className="text-label block mb-2">Min Valence: {filters.minValence}</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={filters.minValence}
-                    onChange={(e) => setFilters({ ...filters, minValence: parseInt(e.target.value) })}
-                    className="w-full"
-                  />
-                </div>
-                <div>
-                  <label className="text-label block mb-2">Max Valence: {filters.maxValence}</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={filters.maxValence}
-                    onChange={(e) => setFilters({ ...filters, maxValence: parseInt(e.target.value) })}
-                    className="w-full"
-                  />
-                </div>
-                <button
-                  onClick={handleGenerate}
-                  disabled={loading}
-                  className="w-full btn-primary"
-                >
-                  {loading ? 'Generating...' : 'Generate Recommendations'}
-                </button>
-              </div>
-            </div>
-          )}
         </div>
+      </div>
 
-        {/* Right: Recommendations */}
-        <div className="lg:col-span-2">
-          <div className="glass-panel p-6 min-h-[600px]">
-            {!selectedGame ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                <p className="text-xl mb-2">Select a game to get started</p>
-                <p className="text-sm">Choose a game from the list to generate recommendations</p>
-              </div>
-            ) : loading ? (
-              <div className="flex flex-col items-center justify-center h-full">
-                <div className="w-12 h-12 border-4 border-[#1DB954] border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p className="text-gray-400">Generating recommendations...</p>
-              </div>
-            ) : recommendations.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                <p className="text-xl mb-2">No recommendations yet</p>
-                <p className="text-sm">Click "Generate Recommendations" to see tracks</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-2xl font-bold text-white">
-                    Recommendations for {selectedGame.name}
-                  </h2>
-                  <span className="text-sm text-gray-400">{recommendations.length} tracks</span>
-                </div>
-
-                {/* Playlist Creation */}
-                {selectedTracks.size > 0 && (
-                  <div className="bg-white/5 border border-[#1DB954]/30 rounded-lg p-4 mb-4">
-                    <div className="flex gap-4 items-end">
-                      <div className="flex-1">
-                        <label className="text-label block mb-2">Playlist Name</label>
-                        <input
-                          type="text"
-                          value={playlistName}
-                          onChange={(e) => setPlaylistName(e.target.value)}
-                          placeholder="Enter playlist name..."
-                          className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
-                        />
-                      </div>
-                      <button
-                        onClick={handleCreatePlaylist}
-                        disabled={creatingPlaylist || !playlistName.trim()}
-                        className="btn-primary"
-                      >
-                        {creatingPlaylist ? 'Creating...' : `Create Playlist (${selectedTracks.size})`}
-                      </button>
-                    </div>
+      {/* Games Grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+            <div key={n} className="h-64 bg-white/5 rounded-xl border border-white/10 animate-pulse"></div>
+          ))}
+        </div>
+      ) : filteredGames.length === 0 ? (
+        <div className="text-center py-16">
+          <p className="text-gray-400 text-xl mb-2">No games found</p>
+          <p className="text-gray-500 text-sm">Try adjusting your search</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredGames.map((game) => (
+            <div
+              key={game.game_id}
+              onClick={() => handleGameSelect(game)}
+              className="glass-panel p-0 group cursor-pointer hover:shadow-2xl hover:shadow-[#1DB954]/20 transition-all duration-300 hover:-translate-y-2 border border-white/10 hover:border-[#1DB954]/50 overflow-hidden relative"
+            >
+              {/* Steam-style hover glow effect */}
+              <div className="absolute inset-0 bg-gradient-to-br from-[#1DB954]/0 via-[#1B2838]/0 to-[#2a475e]/0 group-hover:from-[#1DB954]/10 group-hover:via-[#1B2838]/10 group-hover:to-[#2a475e]/10 transition-all duration-300 pointer-events-none z-10"></div>
+              
+              {/* Image / Header Placeholder */}
+              <div className="h-44 md:h-48 bg-gradient-to-br from-gray-800 via-[#1B2838] to-black relative overflow-hidden">
+                {/* Pattern overlay */}
+                <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+                
+                {/* Spotify + Steam gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-[#1DB954]/20 to-transparent group-hover:via-[#1DB954]/30 transition-all duration-300"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-[#1B2838]/0 to-[#1B2838]/30 group-hover:to-[#1B2838]/40 transition-all duration-300"></div>
+                
+                {/* Rating Badge */}
+                {game.rating && (
+                  <div className="absolute top-3 right-3 bg-black/80 backdrop-blur-md text-xs font-black px-3 py-1.5 rounded-lg text-white border border-[#1DB954]/40 shadow-lg shadow-[#1DB954]/20 group-hover:border-[#1DB954] group-hover:shadow-[#1DB954]/40 transition-all">
+                    {game.rating}%
                   </div>
                 )}
+              </div>
 
-                <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                  {recommendations.map((track, idx) => (
-                    <div
-                      key={track.track_id || idx}
-                      className={`p-4 rounded-lg border transition-all cursor-pointer ${
-                        selectedTracks.has(track.track_id)
-                          ? 'bg-[#1DB954]/20 border-[#1DB954]'
-                          : 'bg-white/5 border-white/10 hover:bg-white/10'
-                      }`}
-                      onClick={() => toggleTrackSelection(track.track_id)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-white">{track.track_name || track.name}</h3>
-                          <p className="text-sm text-gray-400">
-                            Energy: {track.energy} | Valence: {track.valence} | Fit: {track.fit_score?.toFixed(1)}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <span className="text-sm text-gray-500">
-                            {Math.floor((track.track_duration_s || 0) / 60)}:{(track.track_duration_s || 0) % 60}
-                          </span>
-                          {selectedTracks.has(track.track_id) && (
-                            <span className="text-[#1DB954]">✓</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+              <div className="p-5 md:p-6 relative z-20">
+                <h3 className="font-black text-lg md:text-xl leading-tight mb-2 text-white group-hover:text-[#1DB954] transition-colors line-clamp-2 min-h-[3rem]">
+                  {game.name}
+                </h3>
+                <p className="text-sm text-gray-400 mb-4 line-clamp-1 group-hover:text-gray-300 transition-colors">
+                  {game.genres || game.genre_list || 'Genre N/A'}
+                </p>
+                
+                <div className="flex justify-between items-center border-t border-white/10 group-hover:border-[#1B2838]/50 pt-4 mt-2 transition-colors">
+                  <span className="text-[10px] uppercase font-bold text-gray-500 group-hover:text-[#1B2838] tracking-wider transition-colors">
+                    {game.game_id}
+                  </span>
+                  <span className="text-xs text-[#1B2838] font-bold group-hover:text-[#1DB954] group-hover:translate-x-1 transition-all inline-flex items-center gap-1">
+                    View Tracks <span className="text-base">&rarr;</span>
+                  </span>
                 </div>
               </div>
-            )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Stats Footer */}
+      <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-8 border-t border-white/20 pt-12 max-w-4xl mx-auto">
+        <div className="text-center group">
+          <div className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#1DB954] to-white mb-2 group-hover:from-[#1ed760] transition-all">
+            {games.length}
           </div>
+          <div className="text-xs sm:text-sm text-gray-400 uppercase tracking-wider font-bold">Games Available</div>
+        </div>
+        <div className="text-center group">
+          <div className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#1B2838] to-white mb-2 group-hover:from-[#2a475e] transition-all">
+            ∞
+          </div>
+          <div className="text-xs sm:text-sm text-gray-400 uppercase tracking-wider font-bold">Tracks Matched</div>
+        </div>
+        <div className="text-center group">
+          <div className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#1DB954] via-white to-[#1B2838] mb-2 transition-all">
+            100%
+          </div>
+          <div className="text-xs sm:text-sm text-gray-400 uppercase tracking-wider font-bold">Immersion</div>
         </div>
       </div>
     </div>
@@ -293,4 +151,3 @@ const Home = () => {
 };
 
 export default Home;
-

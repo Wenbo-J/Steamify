@@ -75,9 +75,9 @@ const UserPlaylists = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-4xl md:text-5xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white via-[#1DB954] to-[#66C0F4]">
-          My Playlists
-        </h1>
+          <h1 className="text-4xl md:text-5xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white via-[#1DB954] to-[#1B2838]">
+            My Playlists
+          </h1>
         <p className="text-gray-300">Manage your saved playlists</p>
       </div>
 
@@ -102,7 +102,7 @@ const UserPlaylists = () => {
                     onClick={() => handlePlaylistClick(playlist.playlist_id)}
                     className={`p-4 rounded-lg cursor-pointer transition-all ${
                       selectedPlaylist?.playlist_id === playlist.playlist_id
-                        ? 'bg-gradient-to-r from-[#1DB954]/30 to-[#66C0F4]/30 border-2 border-[#1DB954]'
+                        ? 'bg-gradient-to-r from-[#1DB954]/30 to-[#1B2838]/30 border-2 border-[#1DB954]'
                         : 'bg-white/5 border border-white/10 hover:bg-white/10'
                     }`}
                   >
