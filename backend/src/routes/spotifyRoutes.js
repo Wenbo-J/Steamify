@@ -1,13 +1,10 @@
-// Acknowledgement: using hw4a webdb as a starting point to build our own Spotify Route
-
 const { Pool, types } = require('pg');
-const config = require('./config.json')
+const config = require('../../config.json');
 
 // Override the default parsing for BIGINT (PostgreSQL type ID 20)
 types.setTypeParser(20, val => parseInt(val, 10)); //DO NOT DELETE THIS
 
 // Create PostgreSQL connection using database credentials provided in config.json
-// Do not edit. If the connection fails, make sure to check that config.json is filled out correctly
 const connection = new Pool({
   host: config.rds_host,
   user: config.rds_user,
@@ -20,312 +17,421 @@ const connection = new Pool({
 });
 connection.connect((err) => err && console.log(err));
 
-// Route 1: GET /track/track_id
+// Route 1: GET /music/track/:track_id
+// Description: Given a track_id, return all info about the track on spotify
 const track = async function(req, res) {
-
   const track_id = req.params.track_id;
 
   connection.query(`
-    SELECT *
-    FROM spotify_tracks
+    SELECT 
+      track_id,
+      name,
+      artists,
+      genres,
+      duration_s AS duration,
+      tempo,
+      energy,
+      valence,
+      loudness_db AS loudness,
+      danceability,
+      instrumentalness,
+      acousticness,
+      popularity
+    FROM "Spotify"
     WHERE track_id = $1
   `, [track_id], (err, data) => {
     if (err) {
       console.log(err);
       res.json({});
     } else if (data.rows.length === 0) {
-      res.status(404).json({message: 'Track not found'});
+      console.log('Track not found');
+      res.json({});
     } else {
       res.json(data.rows[0]);
     }
-  }
-  )
-}
+  });
+};
 
-// Route 2: GET /random
-const random = async function(req, res) {
-  // you can use a ternary operator to check the value of request query values
-  // which can be particularly useful for setting the default value of queries
-  // note if users do not provide a value for the query it will be undefined, which is falsey
-  const explicit = req.query.explicit === 'true' ? 1 : 0;
+// Route 2.1: GET /music/playlists/:playlist_id
+// Description: Given a playlist_id, return all info about the playlist
+const playlist = async function(req, res) {
+  const playlist_id = req.params.playlist_id;
 
-  // Here is a complete example of how to query the database in JavaScript.
-  // Only a small change (unrelated to querying) is required for TASK 3 in this route.
   connection.query(`
-    SELECT *
-    FROM Songs
-    WHERE explicit <= ${explicit}
-    ORDER BY RANDOM()
-    LIMIT 1
-  `, (err, data) => {
+    SELECT 
+      playlist_id,
+      playlist_name,
+      total_duration_minutes,
+      total_tracks
+    FROM "Playlist"
+    WHERE playlist_id = $1
+  `, [playlist_id], (err, data) => {
     if (err) {
-      // If there is an error for some reason, print the error message and
-      // return an empty object instead
       console.log(err);
-      // Be cognizant of the fact we return an empty object {}. For future routes, depending on the
-      // return type you may need to return an empty array [] instead.
+      res.json({});
+    } else if (data.rows.length === 0) {
+      console.log('Playlist not found');
       res.json({});
     } else {
-      // Here, we return results of the query as an object, keeping only relevant data
-      // being song_id and title which you will add. In this case, there is only one song
-      // so we just directly access the first element of the query results array (data.rows[0])
-      // TODO (TASK 3): also return the song title in the response
+      res.json(data.rows[0]);
+    }
+  });
+};
+
+// Route 2.2: POST /music/playlists
+// Description: Create a new playlist with user defined name and an optional list of track_ids
+const createPlaylist = async function(req, res) {
+  const { playlist_name, track_id } = req.body;
+  
+  if (!playlist_name) {
+    console.log('playlist_name is required');
+    res.json({});
+    return;
+  }
+
+  // Convert track_id to array if it's provided
+  const track_ids = track_id || [];
+
+  // Use transaction to ensure atomicity (read committed)
+  const client = await connection.connect();
+  
+  try {
+    await client.query('BEGIN');
+
+    // Use the CTE approach from Query 0
+    const result = await client.query(`
+      WITH
+      -- 1. Validate tracks exist
+      valid_tracks AS (
+        SELECT track_id, duration_s
+        FROM "Spotify"
+        WHERE track_id = ANY($1::text[])
+      ),
+      -- 2. Check if any track is missing
+      missing AS (
+        SELECT t.track_id
+        FROM unnest($1::text[]) AS t(track_id)
+        LEFT JOIN valid_tracks v USING(track_id)
+        WHERE v.track_id IS NULL
+      ),
+      -- 3. Insert playlist only if no tracks are missing
+      insert_playlist AS (
+        INSERT INTO "Playlist" (playlist_name, total_duration_minutes, total_tracks)
+          SELECT
+            $2,
+            COALESCE(SUM(v.duration_s) / 60.0, 0) AS total_duration_minutes,
+            COUNT(v.track_id) AS total_tracks
+          FROM valid_tracks v
+          WHERE NOT EXISTS (SELECT 1 FROM missing)
+          RETURNING playlist_id, playlist_name, total_duration_minutes, total_tracks
+      ),
+      -- 4. Insert track associations into Contains
+      insert_contains AS (
+        INSERT INTO "Contains" (playlist_id, track_id)
+          SELECT
+            p.playlist_id,
+            v.track_id
+          FROM insert_playlist p
+          CROSS JOIN valid_tracks v
+          RETURNING playlist_id, track_id
+      )
+      -- 5. Final output
+      SELECT
+        p.playlist_id,
+        p.playlist_name,
+        p.total_duration_minutes,
+        p.total_tracks
+      FROM insert_playlist p
+    `, [track_ids, playlist_name]);
+
+    if (result.rows.length === 0) {
+      throw new Error('Failed to create playlist - possibly invalid track_ids');
+    }
+
+    await client.query('COMMIT');
+    res.json(result.rows[0]);
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.log(err);
+    res.json({});
+  } finally {
+    client.release();
+  }
+};
+
+// Route 2.3: DELETE /music/playlists/:playlist_id
+// Description: Delete a playlist in the database given a playlist_id
+const deletePlaylist = async function(req, res) {
+  const playlist_id = req.params.playlist_id;
+
+  connection.query(`
+    DELETE FROM "Playlist" 
+    WHERE playlist_id = $1 
+    RETURNING playlist_id
+  `, [playlist_id], (err, data) => {
+    if (err) {
+      console.log(err);
+      res.json({});
+    } else if (data.rows.length === 0) {
+      console.log('Playlist not found');
+      res.json({});
+    } else {
       res.json({
-        song_id: data.rows[0].song_id,
-        title: data.rows[0].title
+        playlist_id: data.rows[0].playlist_id,
+        message: 'Playlist deleted successfully'
       });
     }
   });
-}
+};
 
-// Route 3: GET /song/:song_id
-const song = async function(req, res) {
-  // TODO (TASK 4): implement a route that given a song_id, returns all information about the song
-  // Hint: unlike route 2, you can directly SELECT * and just return data.rows[0]
-  // Most of the code is already written for you, you just need to fill in the query
+// Route 3.1: POST /music/playlists/:playlist_id/tracks
+// Description: Given a playlist_id and track_id, insert the song into Contains
+const insertTrackFromPlaylist = async function(req, res) {
+  const playlist_id = req.params.playlist_id;
+  const { track_id } = req.body;
+
+  if (!track_id) {
+    console.log('track_id is required');
+    res.json({});
+    return;
+  }
+
   connection.query(`
-    SELECT *
-    FROM songs
-    WHERE song_id = '${req.params.song_id}'
-    `, (err, data) => {
+    INSERT INTO "Contains" (playlist_id, track_id)
+    VALUES ($1, $2)
+    RETURNING playlist_id, track_id
+  `, [playlist_id, track_id], (err, data) => {
     if (err) {
       console.log(err);
       res.json({});
+    } else if (data.rows.length === 0) {
+      console.log('Failed to insert track');
+      res.json({});
     } else {
-      res.json(data.rows[0]);
+      // Update playlist totals
+      connection.query(`
+        UPDATE "Playlist" p
+        SET 
+          total_tracks = (SELECT COUNT(*) FROM "Contains" WHERE playlist_id = p.playlist_id),
+          total_duration_minutes = (
+            SELECT COALESCE(SUM(s.duration_s), 0) / 60.0
+            FROM "Contains" c
+            JOIN "Spotify" s ON c.track_id = s.track_id
+            WHERE c.playlist_id = p.playlist_id
+          )
+        WHERE p.playlist_id = $1
+      `, [playlist_id], (updateErr) => {
+        if (updateErr) {
+          console.log('Error updating playlist totals:', updateErr);
+        }
+      });
+
+      res.json({
+        playlist_id: data.rows[0].playlist_id,
+        track_id: data.rows[0].track_id,
+        message: 'Track added to playlist successfully'
+      });
     }
   });
-}
+};
 
-// Route 4: GET /album/:album_id
-const album = async function(req, res) {
-  // TODO (TASK 5): implement a route that given a album_id, returns all information about the album
+// Route 3.2: DELETE /music/playlists/:playlist_id/tracks
+// Description: Given a playlist_id and track_id, delete the song from playlist
+const deleteTrackFromPlaylist = async function(req, res) {
+  const playlist_id = req.params.playlist_id;
+  // Accept track_id from query parameter (more RESTful for DELETE) or body
+  const track_id = req.query.track_id || req.body.track_id;
+
+  if (!track_id) {
+    console.log('track_id is required');
+    res.json({});
+    return;
+  }
+
   connection.query(`
-    SELECT *
-    FROM albums
-    WHERE album_id = '${req.params.album_id}'
-    `, (err, data) => {
+    DELETE FROM "Contains"
+    WHERE playlist_id = $1 AND track_id = $2
+    RETURNING playlist_id, track_id
+  `, [playlist_id, track_id], (err, data) => {
+    if (err) {
+      console.log(err);
+      res.json({});
+    } else if (data.rows.length === 0) {
+      console.log('Track not found in playlist');
+      res.json({});
+    } else {
+      // Update playlist totals
+      connection.query(`
+        UPDATE "Playlist" p
+        SET 
+          total_tracks = (SELECT COUNT(*) FROM "Contains" WHERE playlist_id = p.playlist_id),
+          total_duration_minutes = (
+            SELECT COALESCE(SUM(s.duration_s), 0) / 60.0
+            FROM "Contains" c
+            JOIN "Spotify" s ON c.track_id = s.track_id
+            WHERE c.playlist_id = p.playlist_id
+          )
+        WHERE p.playlist_id = $1
+      `, [playlist_id], (updateErr) => {
+        if (updateErr) {
+          console.log('Error updating playlist totals:', updateErr);
+        }
+      });
+
+      res.json({
+        playlist_id: data.rows[0].playlist_id,
+        track_id: data.rows[0].track_id,
+        message: 'Track removed from playlist successfully'
+      });
+    }
+  });
+};
+
+// Route 8: POST /music/playlists/:playlist_id/save
+// Description: Save an already created playlist for a specified user
+const savePlaylist = async function(req, res) {
+  const playlist_id = req.params.playlist_id;
+  const { user_id } = req.body;
+
+  if (!user_id) {
+    console.log('user_id is required');
+    res.json({});
+    return;
+  }
+
+  // First check if playlist exists
+  connection.query(`
+    SELECT playlist_id FROM "Playlist" WHERE playlist_id = $1
+  `, [playlist_id], (err, playlistData) => {
+    if (err) {
+      console.log(err);
+      res.json({});
+      return;
+    }
+    
+    if (playlistData.rows.length === 0) {
+      console.log('Playlist does not exist');
+      res.json({});
+      return;
+    }
+
+    // Check if user exists
+    connection.query(`
+      SELECT user_id FROM "User" WHERE user_id = $1
+    `, [user_id], (err, userData) => {
       if (err) {
         console.log(err);
         res.json({});
-      } else {
-        res.json(data.rows[0]);
+        return;
       }
-    }
-  );
-}
+      
+      if (userData.rows.length === 0) {
+        console.log('User does not exist');
+        res.json({});
+        return;
+      }
 
-// Route 5: GET /albums
-const albums = async function(req, res) {
-  // TODO (TASK 6): implement a route that returns all albums ordered by release date (descending)
-  // Note that in this case you will need to return multiple albums, so you will need to return an array of objects
+      // Check if already saved
+      connection.query(`
+        SELECT * FROM "Saved" WHERE user_id = $1 AND playlist_id = $2
+      `, [user_id, playlist_id], (err, savedData) => {
+        if (err) {
+          console.log(err);
+          res.json({});
+          return;
+        }
+        
+        if (savedData.rows.length > 0) {
+          console.log('Playlist already saved by user');
+          res.json({});
+          return;
+        }
+
+        // Insert into Saved
+        connection.query(`
+          INSERT INTO "Saved" (user_id, playlist_id)
+          VALUES ($1, $2)
+          RETURNING user_id, playlist_id
+        `, [user_id, playlist_id], (err, data) => {
+          if (err) {
+            console.log(err);
+            res.json({});
+          } else {
+            res.json({
+              user_id: data.rows[0].user_id,
+              playlist_id: data.rows[0].playlist_id,
+              message: 'Playlist saved successfully'
+            });
+          }
+        });
+      });
+    });
+  });
+};
+
+// Route 9: DELETE /music/playlists/:playlist_id/save
+// Description: Delete a previously saved playlist for the specified user
+const deleteSavedPlaylist = async function(req, res) {
+  const playlist_id = req.params.playlist_id;
+  const { user_id } = req.body;
+
+  if (!user_id) {
+    console.log('user_id is required');
+    res.json({});
+    return;
+  }
+
   connection.query(`
-    SELECT *
-    FROM albums
-    ORDER BY release_date DESC
-    `, (err, data) => {
-      if (err) {
-        console.log(err);
-        res.json([]);
-      } else {
-        res.json(data.rows);
-      }
+    DELETE FROM "Saved"
+    WHERE user_id = $1 AND playlist_id = $2
+    RETURNING user_id, playlist_id
+  `, [user_id, playlist_id], (err, data) => {
+    if (err) {
+      console.log(err);
+      res.json({});
+    } else if (data.rows.length === 0) {
+      console.log('Saved playlist not found');
+      res.json({});
+    } else {
+      res.json({
+        user_id: data.rows[0].user_id,
+        playlist_id: data.rows[0].playlist_id,
+        message: 'Saved playlist deleted successfully'
+      });
     }
-  );
-}
+  });
+};
 
-// Route 6: GET /album_songs/:album_id
-const album_songs = async function(req, res) {
-  // TODO (TASK 7): implement a route that given an album_id, returns all songs on that album ordered by track number (ascending)
-  connection.query(
-    `
-    SELECT song_id, title, number, duration, plays
-    FROM songs
-    WHERE album_id = '${req.params.album_id}'
-    ORDER BY number
-    `, (err, data) => {
-      if (err) {
-        console.log(err);
-        res.json([]);
-      } else {
-        res.json(data.rows);
-      }
+// Route 11: GET /users/:user_id/playlists
+// Description: Given an user_id, return all playlists they saved before
+const getUserPlaylists = async function(req, res) {
+  const user_id = req.params.user_id;
+
+  connection.query(`
+    SELECT 
+      p.playlist_id,
+      p.playlist_name
+    FROM "Saved" s
+    JOIN "Playlist" p ON s.playlist_id = p.playlist_id
+    WHERE s.user_id = $1
+  `, [user_id], (err, data) => {
+    if (err) {
+      console.log(err);
+      res.json([]);
+    } else {
+      res.json(data.rows);
     }
-  );
-}
-
-// Route 7: GET /top_songs
-const top_songs = async function(req, res) {
-  const page = req.query.page;
-  // TODO (TASK 8): use the ternary (or nullish) operator to set the pageSize based on the query or default to 10
-  const pageSize = req.query.page_size ?? 10;
-
-  if (!page) {
-    // TODO (TASK 9)): query the database and return all songs ordered by number of plays (descending)
-    // Hint: you will need to use a JOIN to get the album title as well
-    connection.query(
-      `
-      SELECT s.song_id AS song_id, s.title AS title, a.album_id AS album_id, a.title AS album, s.plays AS plays
-      FROM songs s JOIN albums a ON s.album_id = a.album_id
-      ORDER BY plays DESC
-      `, (err, data) => {
-        if (err) {
-          console.log(err);
-          res.json([]);
-        } else {
-          res.json(data.rows);
-        }
-      }
-    );
-  } else {
-    // TODO (TASK 10): reimplement TASK 9 with pagination
-    // Hint: use LIMIT and OFFSET (see https://www.w3schools.com/php/php_mysql_select_limit.asp)
-    connection.query(
-      `
-      SELECT s.song_id AS song_id, s.title AS title, a.album_id AS album_id, a.title AS album, s.plays AS plays
-      FROM songs s JOIN albums a ON s.album_id = a.album_id
-      ORDER BY plays DESC
-      LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}
-      `, (err, data) => {
-        if (err) {
-          console.log(err);
-          res.json([]);
-        } else {
-          res.json(data.rows);
-        }
-      }
-    );
-  }
-}
-
-// Route 8: GET /top_albums
-const top_albums = async function(req, res) {
-  // TODO (TASK 11): return the top albums ordered by aggregate number of plays of all songs on the album (descending), with optional pagination (as in route 7)
-  // Hint: you will need to use a JOIN and aggregation to get the total plays of songs in an album
-  const page = req.query.page;
-  const pageSize = req.query.page_size ?? 10;
-  
-  if (!page) {
-    connection.query(
-      `
-      SELECT a.album_id AS album_id, a.title AS title, SUM(s.plays) AS plays
-      FROM albums a JOIN songs s ON a.album_id = s.album_id
-      GROUP BY a.album_id, a.title
-      ORDER BY plays DESC
-      `, (err, data) => {
-        if (err) {
-          console.log(err);
-          res.json([]);
-        } else {
-          res.json(data.rows);
-        }
-      }
-    );
-  } else {
-    connection.query(
-      `
-      SELECT a.album_id AS album_id, a.title AS title, SUM(s.plays) AS plays
-      FROM albums a JOIN songs s ON a.album_id = s.album_id
-      GROUP BY a.album_id, a.title
-      ORDER BY plays DESC
-      LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}
-      `, (err, data) => {
-        if (err) {
-          console.log(err);
-          res.json([]);
-        } else {
-          res.json(data.rows);
-        }
-      }
-    );
-  }
-}
-
-// Route 9: GET /search_songs
-const search_songs = async function(req, res) {
-  // TODO (TASK 12): return all songs that match the given search query with parameters defaulted to those specified in API spec ordered by title (ascending)
-  // Some default parameters have been provided for you, but you will need to fill in the rest
-  const title = req.query.title ?? '';
-  const durationLow = req.query.duration_low ?? 60;
-  const durationHigh = req.query.duration_high ?? 660;
-  const playsLow = req.query.plays_low ?? 0;
-  const playsHigh = req.query.plays_high ?? 1100000000;
-  const danceabilityLow = req.query.danceability_low ?? 0;
-  const danceabilityHigh = req.query.danceability_high ?? 1;
-  const energyLow = req.query.energy_low ?? 0;
-  const energyHigh = req.query.energy_high ?? 1;
-  const valenceLow = req.query.valence_low ?? 0;
-  const valenceHigh = req.query.valence_high ?? 1;
-  const explicit = req.query.explicit === 'true' ? 1 : 0;
-
-  connection.query(
-    `
-    SELECT *
-    FROM songs
-    WHERE title LIKE '%${title}%'
-      AND duration BETWEEN ${durationLow} AND ${durationHigh}
-      AND plays BETWEEN ${playsLow} AND ${playsHigh}
-      AND danceability BETWEEN ${danceabilityLow} AND ${danceabilityHigh}
-      AND energy BETWEEN ${energyLow} AND ${energyHigh}
-      AND valence BETWEEN ${valenceLow} AND ${valenceHigh}
-      AND explicit <= ${explicit}
-    ORDER BY title ASC
-    `, (err, data) => {
-      if (err) {
-        console.log(err);
-        res.json([]);
-      } else {
-        res.json(data.rows);
-      }
-    }
-  );
-}
-
-/**
- * Route 10: GET /playlist/entrance_songs - Wedding entrance playlist
- *
- * Let's celebrate the wedding of Travis and Taylor!
- *
- * Travis Kelce is cooking up some slow danceable songs with Taylors before the
- * highly anticipated Wedding entrance. Travis decides that a slow danceable
- * song is one with: maximum energy of 0.5 and a minimum danceability of at least 0.73
- * Let's design a wedding entrance playlist for Travis to pass to the DJ
- */
-const entrance_songs = async function(req, res) {
-  // TODO (TASK 13): return a selection of songs that meet the criteria above
-  // You should allow the user to specify how many songs they want (limit) with a default of 10
-  const limit = req.query.limit || 10;
-  const maxEnergy = req.query.max_energy || 0.5;
-  const minDanceability = req.query.min_danceability || 0.73;
-
-  connection.query(
-    `
-    SELECT s.song_id AS song_id, s.title AS title, a.title AS album,
-       s.danceability AS danceability, s.energy AS energy, s.valence AS valence
-    FROM songs s JOIN albums a ON s.album_id = a.album_id
-    WHERE energy <= ${maxEnergy} AND danceability >= ${minDanceability}
-    ORDER BY valence DESC, danceability DESC
-    LIMIT ${limit}
-    `, (err, data) => {
-      if (err) {
-        console.log(err);
-        res.json([]);
-      } else {
-        res.json(data.rows);
-      }
-    }
-  );
-}
+  });
+};
 
 module.exports = {
-  author,
-  random,
-  song,
-  album,
-  albums,
-  album_songs,
-  top_songs,
-  top_albums,
-  search_songs,
-  entrance_songs
-}
+  track,
+  playlist,
+  createPlaylist,
+  deletePlaylist,
+  insertTrackFromPlaylist,
+  deleteTrackFromPlaylist,
+  savePlaylist,
+  deleteSavedPlaylist,
+  getUserPlaylists
+};
