@@ -16,7 +16,7 @@ const pool = new Pool(config);
  *    session_duration_s is reached
  *
  * Query parameters:
- *  - game_id (required): Steam game_id
+ *  - game_name (required): Steam game name
  *  - session_duration_s (optional, default 1800): target session length in seconds
  *  - min_energy (optional, default 25)
  *  - max_energy (optional, default 35)
@@ -70,9 +70,12 @@ const search_songs = async function (req, res) {
     ranked_with_cutoff AS (
        SELECT
            *,
-           MIN(cum_duration_s) FILTER (
+           COALESCE(
+             MIN(cum_duration_s) FILTER (
                WHERE cum_duration_s >= ($6 * 60)
-           ) OVER () AS cutoff_s
+             ) OVER (),
+             MAX(cum_duration_s) OVER ()
+           ) AS cutoff_s
        FROM ranked
     )
     SELECT
