@@ -7,8 +7,19 @@ const spotifyRoutes = require("./routes/spotifyRoutes");
 const steamRoutes = require("./routes/steamRoutes");
 
 const app = express();
-app.use(cors());
+// CORS configuration - allow all origins for development
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
+
+// Add request logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
 
 app.get("/api", (req, res) => {
   res.json({ message: "Backend is running" });
@@ -16,6 +27,7 @@ app.get("/api", (req, res) => {
 
 // Spotify/Music Routes
 app.get("/music/track/:track_id", spotifyRoutes.track);
+app.get("/music/tracks", spotifyRoutes.getAllTracks);
 app.get("/music/playlists/:playlist_id", spotifyRoutes.playlist);
 app.post("/music/playlists", spotifyRoutes.createPlaylist);
 app.delete("/music/playlists/:playlist_id", spotifyRoutes.deletePlaylist);
@@ -25,9 +37,14 @@ app.post("/music/playlists/:playlist_id/save", spotifyRoutes.savePlaylist);
 app.delete("/music/playlists/:playlist_id/save", spotifyRoutes.deleteSavedPlaylist);
 
 // Steam/Game Routes
+// Support both with and without trailing slash
+app.get("/games", steamRoutes.getAllGames);
 app.get("/games/", steamRoutes.getAllGames);
 app.get("/games/:game_id", steamRoutes.getGame);
 app.get("/games/:game_id/recommended_tracks", steamRoutes.getGameRecommendedTracks);
+
+// Recommendation Routes (API spec Route 6)
+app.get("/recommends/:game_id", steamRoutes.recommendedTracks);
 
 // Analytics Routes (if implemented)
 // app.get("/genres/steam/audio_profile", steamRoutes.getGenreAudioProfile);
@@ -36,9 +53,16 @@ app.get("/games/:game_id/recommended_tracks", steamRoutes.getGameRecommendedTrac
 
 // User Routes
 app.post("/users/", userRoutes.createUser);
+app.post("/auth/google", userRoutes.googleAuth);
 app.get("/users/:user_id", userRoutes.userAccounts);
 app.patch("/users/:user_id", userRoutes.updateUser);
 app.get("/users/:user_id/games", userRoutes.getUserGames);
 app.get("/users/:user_id/playlists", userRoutes.getUserPlaylists);
 
-app.listen(5000, () => console.log("Server running on port 5000"));
+// Use port 5001 to avoid conflict with AirPlay on port 5000
+const PORT = process.env.PORT || 5001;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Health check: http://localhost:${PORT}/api`);
+  console.log(`Games endpoint: http://localhost:${PORT}/games/`);
+});

@@ -22,24 +22,100 @@ const connection = new Pool({
 connection.connect((err) => err && console.log(err));
 
 // Route 7.1: POST /users/
-// Create an user with their provided steam id / name and spotify id / name
+// Create or get user (Google OAuth - uses email as identifier)
+// Optional: steam_id, steam_name, spotify_id, spotify_name for linking accounts
 const createUser = async function(req, res) {
-  const { steam_id, steam_name, spotify_id, spotify_name } = req.body;
+  const { email, name, google_id, steam_id, steam_name, spotify_id, spotify_name } = req.body;
 
+  // First check if user exists (by email stored in steam_name or spotify_name, or we need to add email column)
+  // For now, we'll use a simple approach: create user with Google info
+  // If email is provided, we can use it to identify users
+  
+  // Check if user already exists - we'll use a combination approach
+  // Since we don't have email column, we'll create new user each time for now
+  // In production, you'd want to add email column or use a different identifier
+  
   connection.query(`
     INSERT INTO "User" (steam_id, steam_name, spotify_id, spotify_name)
     VALUES ($1, $2, $3, $4)
     RETURNING user_id
-  `, [steam_id, steam_name, spotify_id, spotify_name], (err, data) => {
+  `, [
+    steam_id || null, 
+    steam_name || (email ? `Google: ${email}` : name || 'User'), 
+    spotify_id || null, 
+    spotify_name || (email ? email : null)
+  ], (err, data) => {
     if (err) {
-      console.log(err);
-      res.json({});
+      console.error('Error creating user:', err);
+      // If user already exists or other error, try to get existing user
+      // For now, return error - in production you'd want better user lookup
+      res.status(500).json({ error: 'Failed to create user', message: err.message });
     } else if (data.rows.length === 0) {
-      res.json({});
+      res.status(500).json({ error: 'User creation failed' });
     } else {
       res.json({
         user_id: data.rows[0].user_id,
         message: 'User created successfully'
+      });
+    }
+  });
+}
+
+// Route 7.1.1: POST /auth/google
+// Handle Google OAuth sign-in/sign-up
+const googleAuth = async function(req, res) {
+  const { email, name, picture, google_id } = req.body;
+  
+  if (!email) {
+    res.status(400).json({ error: 'Email is required' });
+    return;
+  }
+  
+  // Try to find existing user by email (stored in spotify_name or steam_name)
+  // This is a workaround since we don't have email column
+  connection.query(`
+    SELECT user_id, steam_id, steam_name, spotify_id, spotify_name
+    FROM "User"
+    WHERE spotify_name = $1 OR steam_name LIKE $2
+    LIMIT 1
+  `, [email, `%${email}%`], (err, existingUser) => {
+    if (err) {
+      console.error('Error finding user:', err);
+      res.status(500).json({ error: 'Database error', message: err.message });
+      return;
+    }
+    
+    if (existingUser.rows.length > 0) {
+      // User exists, return user info
+      const user = existingUser.rows[0];
+      res.json({
+        user_id: user.user_id,
+        email: email,
+        name: name,
+        picture: picture,
+        steam_id: user.steam_id,
+        spotify_id: user.spotify_id,
+        message: 'User signed in successfully'
+      });
+    } else {
+      // Create new user
+      connection.query(`
+        INSERT INTO "User" (steam_id, steam_name, spotify_id, spotify_name)
+        VALUES ($1, $2, $3, $4)
+        RETURNING user_id
+      `, [null, `Google: ${name || email}`, null, email], (err, data) => {
+        if (err) {
+          console.error('Error creating user:', err);
+          res.status(500).json({ error: 'Failed to create user', message: err.message });
+        } else {
+          res.json({
+            user_id: data.rows[0].user_id,
+            email: email,
+            name: name,
+            picture: picture,
+            message: 'User created successfully'
+          });
+        }
       });
     }
   });
@@ -260,6 +336,7 @@ const getUserPlaylists = async function(req, res) {
 
 module.exports = {
   createUser,
+  googleAuth,
   userAccounts,
   updateUser,
   savePlaylist,
