@@ -1,0 +1,44 @@
+WITH genre_recommended_tracks AS (
+    SELECT DISTINCT
+        gg.genre AS game_genre,
+        gg.game_id AS game_id,
+        r.track_id AS track_id
+    FROM "GameGen" gg
+             JOIN "Recommendations" r ON gg.game_id = r.game_id
+             JOIN "Steam" s on s.game_id = gg.game_id
+)
+SELECT
+    grt.game_genre,
+    COUNT(DISTINCT grt.track_id) AS num_tracks,
+    ROUND(AVG(sp.tempo)) AS avg_tempo,
+    ROUND(AVG(sp.energy)) AS avg_energy,
+    ROUND(AVG(sp.valence)) AS avg_valence,
+    ROUND(AVG(sp.danceability)) AS avg_danceability,
+    ROUND(AVG(sp.acousticness)) AS avg_acousticness,
+    ROUND(AVG(sp.popularity)) AS avg_popularity
+FROM genre_recommended_tracks grt
+         JOIN "Spotify" sp ON grt.track_id = sp.track_id
+GROUP BY grt.game_genre
+HAVING COUNT(DISTINCT grt.track_id) >= 50
+ORDER BY avg_popularity DESC;
+
+
+SELECT
+    gg.genre AS game_genre,
+    COUNT(DISTINCT r.track_id)          AS num_tracks,
+    ROUND(AVG(sp.tempo))               AS avg_tempo,
+    ROUND(AVG(sp.energy))              AS avg_energy,
+    ROUND(AVG(sp.valence))             AS avg_valence,
+    ROUND(AVG(sp.danceability))        AS avg_danceability,
+    ROUND(AVG(sp.acousticness))        AS avg_acousticness,
+    ROUND(AVG(sp.popularity))          AS avg_popularity
+FROM "GameGen" gg
+         JOIN "Steam"          s  ON s.game_id  = gg.game_id      -- keep only if you actually need Steam
+         JOIN "Recommendations" r ON r.game_id = gg.game_id
+         JOIN "Spotify"        sp ON sp.track_id = r.track_id
+GROUP BY gg.genre
+HAVING COUNT(DISTINCT r.track_id) >= 50
+ORDER BY avg_popularity DESC;
+
+
+
