@@ -38,6 +38,10 @@ export default defineConfig({
         target: 'http://localhost:5001',
         changeOrigin: true,
       },
+      '/analytics': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+      },
     },
   },
 })

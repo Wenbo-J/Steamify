@@ -283,13 +283,16 @@ export const unsavePlaylist = async (playlistId, userId) => {
 };
 
 // Analytics Routes
-// Note: These routes may not be implemented yet in backend
 export const getGenreAudioProfile = async () => {
   try {
-    const res = await fetch(`${BASE_URL}/genres/steam/audio_profile`);
+    const res = await fetch(`${BASE_URL}/analytics/genres/audio_profile`);
     if (res.status === 404) {
-      console.warn('Genre audio profile endpoint not implemented yet');
+      console.warn('Genre audio profile endpoint not found');
       return [];
+    }
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: 'Network error' }));
+      throw new Error(error.error || error.message || `HTTP error! status: ${res.status}`);
     }
     return handleResponse(res);
   } catch (err) {
@@ -300,29 +303,60 @@ export const getGenreAudioProfile = async () => {
 
 export const getTopAudioGenres = async () => {
   try {
-    const res = await fetch(`${BASE_URL}/genres/Spotify/topRecommendations`);
+    const res = await fetch(`${BASE_URL}/analytics/genres/top_pairs`);
     if (res.status === 404) {
-      console.warn('Top audio genres endpoint not implemented yet');
+      console.warn('Top genre pairs endpoint not found');
       return [];
+    }
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: 'Network error' }));
+      throw new Error(error.error || error.message || `HTTP error! status: ${res.status}`);
     }
     return handleResponse(res);
   } catch (err) {
-    console.error('Error fetching top audio genres:', err);
+    console.error('Error fetching top genre pairs:', err);
     return [];
   }
 };
 
 export const getSimilarUserPlaylist = async (userId) => {
   try {
-    const res = await fetch(`${BASE_URL}/playlist/similarUsers?user_id=${userId}`);
+    const res = await fetch(`${BASE_URL}/analytics/social/recommendations?user_id=${userId}`);
     if (res.status === 404) {
-      console.warn('Similar users endpoint not implemented yet');
+      console.warn('Social recommendations endpoint not found');
       return [];
+    }
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: 'Network error' }));
+      throw new Error(error.error || error.message || `HTTP error! status: ${res.status}`);
     }
     return handleResponse(res);
   } catch (err) {
-    console.error('Error fetching similar user playlists:', err);
+    console.error('Error fetching social recommendations:', err);
     return [];
+  }
+};
+
+// Additional analytics route: Search songs for a game
+export const searchSongs = async (gameName, sessionDurationSeconds = 1800, minEnergy = 25, maxEnergy = 75, minValence = 25, maxValence = 75) => {
+  try {
+    const params = new URLSearchParams({
+      game_name: gameName,
+      session_duration_s: sessionDurationSeconds.toString(),
+      min_energy: minEnergy.toString(),
+      max_energy: maxEnergy.toString(),
+      min_valence: minValence.toString(),
+      max_valence: maxValence.toString()
+    });
+    const res = await fetch(`${BASE_URL}/analytics/search/songs?${params}`);
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: 'Network error' }));
+      throw new Error(error.error || error.message || `HTTP error! status: ${res.status}`);
+    }
+    return handleResponse(res);
+  } catch (err) {
+    console.error('Error searching songs:', err);
+    throw err;
   }
 };
 

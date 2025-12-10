@@ -5,6 +5,7 @@ require("dotenv").config();
 const userRoutes = require("./routes/userRoutes");
 const spotifyRoutes = require("./routes/spotifyRoutes");
 const steamRoutes = require("./routes/steamRoutes");
+const analyticalRoutes = require("./routes/analyticalRoutes");
 
 const app = express();
 // CORS configuration - allow all origins for development
@@ -46,10 +47,11 @@ app.get("/games/:game_id/recommended_tracks", steamRoutes.getGameRecommendedTrac
 // Recommendation Routes (API spec Route 6)
 app.get("/recommends/:game_id", steamRoutes.recommendedTracks);
 
-// Analytics Routes (if implemented)
-// app.get("/genres/steam/audio_profile", steamRoutes.getGenreAudioProfile);
-// app.get("/genres/Spotify/topRecommendations", steamRoutes.getTopAudioGenres);
-// app.get("/playlist/similarUsers", steamRoutes.getSimilarUserPlaylist);
+// Analytics Routes
+app.get("/analytics/genres/audio_profile", analyticalRoutes.get_genre_audio_profile);
+app.get("/analytics/genres/top_pairs", analyticalRoutes.get_top_genre_pairs);
+app.get("/analytics/social/recommendations", analyticalRoutes.get_social_recommendations);
+app.get("/analytics/search/songs", analyticalRoutes.search_songs);
 
 // User Routes
 app.post("/users/", userRoutes.createUser);
