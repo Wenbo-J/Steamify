@@ -355,8 +355,8 @@ export const getSimilarUserPlaylist = async (userId) => {
   }
 };
 
-// Additional analytics route: Search songs for a game
-export const searchSongs = async (gameName, sessionDurationSeconds = 1800, minEnergy = 25, maxEnergy = 75, minValence = 25, maxValence = 75) => {
+// Additional analytics route: Search songs for a game (uses Recommendations table with proper duration filtering)
+export const searchSongs = async (gameName, sessionDurationSeconds = 1800, minEnergy = 0, maxEnergy = 100, minValence = 0, maxValence = 100) => {
   try {
     const params = new URLSearchParams({
       game_name: gameName,
