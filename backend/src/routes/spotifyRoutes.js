@@ -424,8 +424,43 @@ const getUserPlaylists = async function(req, res) {
   });
 };
 
+// Route: GET /music/tracks
+// Get all tracks (for Browse Music page)
+const getAllTracks = async function(req, res) {
+  const limit = parseInt(req.query.limit) || 20;
+  const offset = parseInt(req.query.offset) || 0;
+  
+  connection.query(`
+    SELECT 
+      track_id,
+      name,
+      artists,
+      genres,
+      duration_s AS duration,
+      tempo,
+      energy,
+      valence,
+      loudness_db AS loudness,
+      danceability,
+      instrumentalness,
+      acousticness,
+      popularity
+    FROM "Spotify"
+    ORDER BY popularity DESC, name ASC
+    LIMIT $1 OFFSET $2
+  `, [limit, offset], (err, data) => {
+    if (err) {
+      console.error('Error fetching all tracks:', err);
+      res.status(500).json({ error: 'Database error', message: err.message });
+    } else {
+      res.json(data.rows);
+    }
+  });
+};
+
 module.exports = {
   track,
+  getAllTracks,
   playlist,
   createPlaylist,
   deletePlaylist,
