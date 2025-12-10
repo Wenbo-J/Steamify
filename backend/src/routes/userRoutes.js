@@ -20,62 +20,46 @@ const connection = new Pool({
 });
 connection.connect((err) => err && console.log(err));
 
-// Route 1: GET /track/track_id
-const track = async function(req, res) {
-
-  const track_id = req.params.track_id;
+// Route 13: GET /users/:user_id/games
+const getUserGames = async function(req, res) {
 
   connection.query(`
-    SELECT *
-    FROM "Spotify"
-    WHERE track_id = $1
-  `, [track_id], (err, data) => {
+    SELECT g.game_id, g.name
+    FROM "Owned" o
+    JOIN "Steam" g ON o.game_id = g.game_id
+    WHERE o.user_id = $1;
+  `, [req.params.user_id], (err, data) => {
     if (err) {
       console.log(err);
       res.json({});
     } else if (data.rows.length === 0) {
-      res.status(404).json({message: 'Track not found'});
+      res.status(404).json({message: 'Games not found'});
     } else {
-      res.json(data.rows[0]);
+      res.json(data.rows);
     }
   }
   )
 }
 
-// Route 2: GET /random
-const random = async function(req, res) {
-  // you can use a ternary operator to check the value of request query values
-  // which can be particularly useful for setting the default value of queries
-  // note if users do not provide a value for the query it will be undefined, which is falsey
-  const explicit = req.query.explicit === 'true' ? 1 : 0;
+// Route 14: GET /users/:user_id/playlists
+const getUserPlaylists = async function(req, res) {
 
-  // Here is a complete example of how to query the database in JavaScript.
-  // Only a small change (unrelated to querying) is required for TASK 3 in this route.
   connection.query(`
-    SELECT *
-    FROM Songs
-    WHERE explicit <= ${explicit}
-    ORDER BY RANDOM()
-    LIMIT 1
-  `, (err, data) => {
+    SELECT p.playlist_id, p.playlist_name
+    FROM "Saved" s
+    JOIN "Playlist" p ON s.playlist_id = p.playlist_id
+    WHERE s.user_id = $1;
+  `, [req.params.user_id], (err, data) => {
     if (err) {
-      // If there is an error for some reason, print the error message and
-      // return an empty object instead
       console.log(err);
-      // Be cognizant of the fact we return an empty object {}. For future routes, depending on the
-      // return type you may need to return an empty array [] instead.
       res.json({});
+    } else if (data.rows.length === 0) {
+      res.status(404).json({message: 'Playlists not found'});
     } else {
-      // Here, we return results of the query as an object, keeping only relevant data
-      // being song_id and title which you will add. In this case, there is only one song
-      // so we just directly access the first element of the query results array (data.rows[0])
-      // TODO (TASK 3): also return the song title in the response
-      res.json({
-        song_id: data.rows[0].song_id,
-        title: data.rows[0].title
-      });
+      res.json(data.rows);
     }
-  });
+  }
+  )
 }
 
 // Route 3: GET /song/:song_id
