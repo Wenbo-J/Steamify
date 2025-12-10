@@ -30,6 +30,7 @@ app.get("/api", (req, res) => {
 app.get("/music/track/:track_id", spotifyRoutes.track);
 app.get("/music/tracks", spotifyRoutes.getAllTracks);
 app.get("/music/playlists/:playlist_id", spotifyRoutes.playlist);
+app.get("/music/playlists/:playlist_id/tracks", spotifyRoutes.getPlaylistTracks);
 app.post("/music/playlists", spotifyRoutes.createPlaylist);
 app.delete("/music/playlists/:playlist_id", spotifyRoutes.deletePlaylist);
 app.post("/music/playlists/:playlist_id/tracks", spotifyRoutes.insertTrackFromPlaylist);

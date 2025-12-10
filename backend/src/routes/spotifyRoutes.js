@@ -78,10 +78,46 @@ const playlist = async function(req, res) {
   });
 };
 
+// Route 2.1.1: GET /music/playlists/:playlist_id/tracks
+// Description: Given a playlist_id, return all tracks in the playlist with full track details
+const getPlaylistTracks = async function(req, res) {
+  const playlist_id = req.params.playlist_id;
+
+  connection.query(`
+    SELECT 
+      s.track_id,
+      s.name,
+      s.artists,
+      s.genres,
+      s.duration_s AS duration,
+      s.tempo,
+      s.energy,
+      s.valence,
+      s.loudness_db AS loudness,
+      s.danceability,
+      s.instrumentalness,
+      s.acousticness,
+      s.popularity,
+      c.playlist_id
+    FROM "Contains" c
+    JOIN "Spotify" s ON c.track_id = s.track_id
+    WHERE c.playlist_id = $1
+    ORDER BY s.name
+  `, [playlist_id], (err, data) => {
+    if (err) {
+      console.error('Error fetching playlist tracks:', err);
+      res.status(500).json({ error: 'Database error', message: err.message });
+    } else {
+      res.json(data.rows);
+    }
+  });
+};
+
 // Route 2.2: POST /music/playlists
 // Description: Create a new playlist with user defined name and an optional list of track_ids
+// If user_id is provided, automatically save the playlist for that user
 const createPlaylist = async function(req, res) {
-  const { playlist_name, track_id } = req.body;
+  const { playlist_name, track_id, user_id } = req.body;
   
   if (!playlist_name) {
     console.log('playlist_name is required');
@@ -148,12 +184,24 @@ const createPlaylist = async function(req, res) {
       throw new Error('Failed to create playlist - possibly invalid track_ids');
     }
 
+    const playlist_id = result.rows[0].playlist_id;
+
+    // If user_id is provided, save the playlist for the user
+    if (user_id) {
+      await client.query(`
+        INSERT INTO "Saved" (user_id, playlist_id)
+        VALUES ($1, $2)
+        ON CONFLICT (user_id, playlist_id) DO NOTHING
+      `, [user_id, playlist_id]);
+      console.log(`Playlist ${playlist_id} saved for user ${user_id}`);
+    }
+
     await client.query('COMMIT');
     res.json(result.rows[0]);
   } catch (err) {
     await client.query('ROLLBACK');
-    console.log(err);
-    res.json({});
+    console.error('Error creating playlist:', err);
+    res.status(500).json({ error: 'Failed to create playlist', message: err.message });
   } finally {
     client.release();
   }
@@ -462,6 +510,7 @@ module.exports = {
   track,
   getAllTracks,
   playlist,
+  getPlaylistTracks,
   createPlaylist,
   deletePlaylist,
   insertTrackFromPlaylist,
