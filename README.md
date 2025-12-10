@@ -90,8 +90,3 @@ Frontend runs on `http://localhost:5173`
 - `/recommends/:game_id` - Game recommendations (Route 6)
 - `/analytics` - Music analytics endpoints
 - `/auth/google` - Google authentication
-
-## License
-
-ISC
-
