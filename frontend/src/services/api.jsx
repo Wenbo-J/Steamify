@@ -1,144 +1,280 @@
 const BASE_URL = 'http://localhost:5000'; // Backend port
 
-// Steam Routes
-export const getAllGames = async () => {
-  const res = await fetch(`${BASE_URL}/games/`);
+// Helper function to handle API responses
+const handleResponse = async (res) => {
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'Network error' }));
+    throw new Error(error.error || error.message || `HTTP error! status: ${res.status}`);
+  }
   return res.json();
+};
+
+// Steam/Game Routes
+// Note: These routes may not be implemented yet in backend
+export const getAllGames = async () => {
+  try {
+    const res = await fetch(`${BASE_URL}/games/`);
+    if (res.status === 404) {
+      console.warn('Games endpoint not implemented yet');
+      return [];
+    }
+    return handleResponse(res);
+  } catch (err) {
+    console.error('Error fetching games:', err);
+    return [];
+  }
 };
 
 export const getGame = async (gameId) => {
-  const res = await fetch(`${BASE_URL}/games/${gameId}`);
-  return res.json();
+  try {
+    const res = await fetch(`${BASE_URL}/games/${gameId}`);
+    if (res.status === 404) {
+      console.warn('Game endpoint not implemented yet');
+      return {};
+    }
+    return handleResponse(res);
+  } catch (err) {
+    console.error('Error fetching game:', err);
+    return {};
+  }
 };
 
-// Spotify Routes
+// Spotify/Music Routes
 export const getTrack = async (trackId) => {
-  const res = await fetch(`${BASE_URL}/music/track/${trackId}`);
-  return res.json();
+  try {
+    const res = await fetch(`${BASE_URL}/music/track/${trackId}`);
+    return handleResponse(res);
+  } catch (err) {
+    console.error('Error fetching track:', err);
+    return {};
+  }
 };
 
 export const getAllTracks = async () => {
-  // This would need to be implemented in backend
-  const res = await fetch(`${BASE_URL}/music/tracks`);
-  return res.json();
+  // Note: This endpoint may not be implemented in backend
+  // For now, return empty array or implement a workaround
+  try {
+    const res = await fetch(`${BASE_URL}/music/tracks`);
+    if (res.status === 404) {
+      console.warn('All tracks endpoint not implemented yet');
+      return [];
+    }
+    return handleResponse(res);
+  } catch (err) {
+    console.error('Error fetching tracks:', err);
+    return [];
+  }
 };
 
 export const getPlaylist = async (playlistId) => {
-  const res = await fetch(`${BASE_URL}/music/playlists/${playlistId}`);
-  return res.json();
+  try {
+    const res = await fetch(`${BASE_URL}/music/playlists/${playlistId}`);
+    return handleResponse(res);
+  } catch (err) {
+    console.error('Error fetching playlist:', err);
+    return {};
+  }
 };
 
 export const createPlaylist = async (playlistName, trackIds = []) => {
-  const res = await fetch(`${BASE_URL}/music/playlists`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ playlist_name: playlistName, track_id: trackIds })
-  });
-  return res.json();
+  try {
+    const res = await fetch(`${BASE_URL}/music/playlists`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ playlist_name: playlistName, track_id: trackIds })
+    });
+    return handleResponse(res);
+  } catch (err) {
+    console.error('Error creating playlist:', err);
+    throw err;
+  }
 };
 
 export const deletePlaylist = async (playlistId) => {
-  const res = await fetch(`${BASE_URL}/music/playlists/${playlistId}`, {
-    method: 'DELETE'
-  });
-  return res.json();
+  try {
+    const res = await fetch(`${BASE_URL}/music/playlists/${playlistId}`, {
+      method: 'DELETE'
+    });
+    return handleResponse(res);
+  } catch (err) {
+    console.error('Error deleting playlist:', err);
+    throw err;
+  }
 };
 
 export const addTrackToPlaylist = async (playlistId, trackId) => {
-  const res = await fetch(`${BASE_URL}/music/playlists/${playlistId}/tracks`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ track_id: trackId })
-  });
-  return res.json();
+  try {
+    const res = await fetch(`${BASE_URL}/music/playlists/${playlistId}/tracks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ track_id: trackId })
+    });
+    return handleResponse(res);
+  } catch (err) {
+    console.error('Error adding track to playlist:', err);
+    throw err;
+  }
 };
 
 export const removeTrackFromPlaylist = async (playlistId, trackId) => {
-  const res = await fetch(`${BASE_URL}/music/playlists/${playlistId}/tracks`, {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ track_id: trackId })
-  });
-  return res.json();
+  try {
+    // Backend accepts track_id as query parameter for DELETE
+    const res = await fetch(`${BASE_URL}/music/playlists/${playlistId}/tracks?track_id=${trackId}`, {
+      method: 'DELETE'
+    });
+    return handleResponse(res);
+  } catch (err) {
+    console.error('Error removing track from playlist:', err);
+    throw err;
+  }
 };
 
 // Recommendation Routes
+// Note: These routes may not be implemented yet in backend
 export const getGameRecommendations = async (gameId, sessionMinutes = 60, minEnergy = 0, maxEnergy = 100, minValence = 0, maxValence = 100) => {
-  const params = new URLSearchParams({
-    session_minutes: sessionMinutes,
-    min_energy: minEnergy,
-    max_energy: maxEnergy,
-    min_valence: minValence,
-    max_valence: maxValence
-  });
-  const res = await fetch(`${BASE_URL}/games/${gameId}/recommended_tracks?${params}`);
-  return res.json();
+  try {
+    const params = new URLSearchParams({
+      session_minutes: sessionMinutes,
+      min_energy: minEnergy,
+      max_energy: maxEnergy,
+      min_valence: minValence,
+      max_valence: maxValence
+    });
+    const res = await fetch(`${BASE_URL}/games/${gameId}/recommended_tracks?${params}`);
+    if (res.status === 404) {
+      console.warn('Recommendations endpoint not implemented yet');
+      return [];
+    }
+    return handleResponse(res);
+  } catch (err) {
+    console.error('Error fetching recommendations:', err);
+    return [];
+  }
 };
 
 // User Routes
 export const getUserPlaylists = async (userId) => {
-  const res = await fetch(`${BASE_URL}/users/${userId}/playlists`);
-  return res.json();
+  try {
+    const res = await fetch(`${BASE_URL}/users/${userId}/playlists`);
+    return handleResponse(res);
+  } catch (err) {
+    console.error('Error fetching user playlists:', err);
+    return [];
+  }
 };
 
 export const savePlaylist = async (playlistId, userId) => {
-  const res = await fetch(`${BASE_URL}/music/playlists/${playlistId}/save`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: userId })
-  });
-  return res.json();
+  try {
+    const res = await fetch(`${BASE_URL}/music/playlists/${playlistId}/save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId })
+    });
+    return handleResponse(res);
+  } catch (err) {
+    console.error('Error saving playlist:', err);
+    throw err;
+  }
 };
 
 export const unsavePlaylist = async (playlistId, userId) => {
-  const res = await fetch(`${BASE_URL}/music/playlists/${playlistId}/save`, {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: userId })
-  });
-  return res.json();
+  try {
+    const res = await fetch(`${BASE_URL}/music/playlists/${playlistId}/save`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId })
+    });
+    return handleResponse(res);
+  } catch (err) {
+    console.error('Error unsaving playlist:', err);
+    throw err;
+  }
 };
 
 // Analytics Routes
+// Note: These routes may not be implemented yet in backend
 export const getGenreAudioProfile = async () => {
-  const res = await fetch(`${BASE_URL}/genres/steam/audio_profile`);
-  return res.json();
+  try {
+    const res = await fetch(`${BASE_URL}/genres/steam/audio_profile`);
+    if (res.status === 404) {
+      console.warn('Genre audio profile endpoint not implemented yet');
+      return [];
+    }
+    return handleResponse(res);
+  } catch (err) {
+    console.error('Error fetching genre audio profile:', err);
+    return [];
+  }
 };
 
 export const getTopAudioGenres = async () => {
-  const res = await fetch(`${BASE_URL}/genres/Spotify/topRecommendations`);
-  return res.json();
+  try {
+    const res = await fetch(`${BASE_URL}/genres/Spotify/topRecommendations`);
+    if (res.status === 404) {
+      console.warn('Top audio genres endpoint not implemented yet');
+      return [];
+    }
+    return handleResponse(res);
+  } catch (err) {
+    console.error('Error fetching top audio genres:', err);
+    return [];
+  }
 };
 
 export const getSimilarUserPlaylist = async (userId) => {
-  const res = await fetch(`${BASE_URL}/playlist/similarUsers?user_id=${userId}`);
-  return res.json();
+  try {
+    const res = await fetch(`${BASE_URL}/playlist/similarUsers?user_id=${userId}`);
+    if (res.status === 404) {
+      console.warn('Similar users endpoint not implemented yet');
+      return [];
+    }
+    return handleResponse(res);
+  } catch (err) {
+    console.error('Error fetching similar user playlists:', err);
+    return [];
+  }
 };
 
 // Authentication Routes
+// Note: These routes may not be implemented yet in backend
 export const signup = async (email, password) => {
-  const res = await fetch(`${BASE_URL}/auth/signup`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
-  });
-  return res.json();
+  try {
+    const res = await fetch(`${BASE_URL}/auth/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    return handleResponse(res);
+  } catch (err) {
+    console.error('Error signing up:', err);
+    throw err;
+  }
 };
 
 export const login = async (email, password) => {
-  const res = await fetch(`${BASE_URL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
-  });
-  return res.json();
+  try {
+    const res = await fetch(`${BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    return handleResponse(res);
+  } catch (err) {
+    console.error('Error logging in:', err);
+    throw err;
+  }
 };
 
 export const changePassword = async (userId, oldPassword, newPassword) => {
-  const res = await fetch(`${BASE_URL}/auth/password`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: userId, old_password: oldPassword, new_password: newPassword })
-  });
-  return res.json();
+  try {
+    const res = await fetch(`${BASE_URL}/auth/password`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, old_password: oldPassword, new_password: newPassword })
+    });
+    return handleResponse(res);
+  } catch (err) {
+    console.error('Error changing password:', err);
+    throw err;
+  }
 };
