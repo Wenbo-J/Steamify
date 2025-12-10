@@ -24,17 +24,17 @@ const pool = new Pool(config);
  *  - max_valence (optional, default 1)
  */
 const search_songs = async function (req, res) {
-  // Read query params with sensible defaults
-  const gameId = req.query.game_id;
-  if (!gameId) {
+
+  const gameName = req.query.game_name;
+  if (!gameName) {
     return res.status(400).json({ error: 'Missing required parameter: game_id' });
   }
 
   const sessionDuration = Number(req.query.session_duration_s ?? 1800); // 30 min default
-  const minEnergy = Number(req.query.min_energy ?? 0);
-  const maxEnergy = Number(req.query.max_energy ?? 1);
-  const minValence = Number(req.query.min_valence ?? 0);
-  const maxValence = Number(req.query.max_valence ?? 1);
+  const minEnergy = Number(req.query.min_energy ?? 25);
+  const maxEnergy = Number(req.query.max_energy ?? 75);
+  const minValence = Number(req.query.min_valence ?? 25);
+  const maxValence = Number(req.query.max_valence ?? 75);
 
   const query = `
     WITH candidate_tracks AS (
@@ -52,7 +52,7 @@ const search_songs = async function (req, res) {
       FROM "Recommendations" r
       JOIN "Steam" sg   ON r.game_id = sg.game_id
       JOIN "Spotify" sp ON r.track_id = sp.track_id
-      WHERE r.game_id = $1
+      WHERE r.name = $1
         AND sp.energy  BETWEEN $2 AND $3
         AND sp.valence BETWEEN $4 AND $5
     ),
@@ -68,7 +68,7 @@ const search_songs = async function (req, res) {
     cutoff AS (
       SELECT MIN(cum_duration_s) AS cutoff_s
       FROM ranked_tracks
-      WHERE cum_duration_s >= $6
+      WHERE cum_duration_s >= ($6 * 60)
     )
     SELECT
       r.track_id,

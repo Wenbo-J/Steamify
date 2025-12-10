@@ -1,0 +1,135 @@
+WITH current_playlists AS (
+    SELECT playlist_id
+    FROM "Saved"
+    WHERE user_id = :current_user_id
+),
+
+-- find the users who share at least two playlists with me
+     similar_users AS (
+         SELECT
+             s2.user_id AS similar_user_id,
+             COUNT(DISTINCT s2.playlist_id) AS shared_playlists
+         FROM "Saved" s2
+                  JOIN current_playlists cp
+                       ON s2.playlist_id = cp.playlist_id
+         WHERE s2.user_id <> :current_user_id
+         GROUP BY s2.user_id
+         HAVING COUNT(DISTINCT s2.playlist_id) >= 2
+     ),
+
+-- select the soundtracks saved by current user
+     current_tracks AS (
+         SELECT DISTINCT c.track_id
+         FROM "Saved" s
+                  JOIN "Contains" c
+                       ON s.playlist_id = c.playlist_id
+         WHERE s.user_id = :current_user_id
+     ),
+
+-- select the soundtracks saved by my similar users
+     candidate_tracks AS (
+         SELECT
+             c.track_id,
+             COUNT(DISTINCT su.similar_user_id) AS num_similar_users
+         FROM "Saved" s
+                  JOIN similar_users su
+                       ON s.user_id = su.similar_user_id
+                  JOIN "Contains" c
+                       ON c.playlist_id = s.playlist_id
+                  LEFT JOIN current_tracks ct
+                            ON ct.track_id = c.track_id
+         WHERE ct.track_id IS NULL
+         GROUP BY c.track_id
+     ),
+
+     ranked AS (
+         SELECT
+             ct.track_id,
+             ct.num_similar_users,
+             sp.name,
+             sp.artists,
+             sp.energy,
+             sp.valence,
+             sp.popularity,
+             ROW_NUMBER() OVER (
+                 ORDER BY ct.num_similar_users DESC, sp.popularity DESC
+                 ) AS rec_rank
+         FROM candidate_tracks ct
+                  JOIN "Spotify" sp
+                       ON ct.track_id = sp.track_id
+     )
+
+SELECT
+    track_id,
+    name,
+    artists,
+    energy,
+    valence,
+    popularity,
+    num_similar_users
+FROM ranked
+WHERE rec_rank <= 30;
+
+
+-- after optimization
+WITH current_playlists AS (
+    SELECT playlist_id
+    FROM "Saved"
+    WHERE user_id = :current_user_id
+),
+-- find the users who share at least two playlists with me
+     similar_users AS (
+         SELECT
+             s2.user_id AS similar_user_id,
+             COUNT (DISTINCT s2.playlist_id) AS shared_playlists
+         FROM "Saved" s2
+         JOIN current_playlists cp
+         ON s2.playlist_id = cp.playlist_id
+         WHERE s2.user_id <> :current_user_id
+         GROUP BY s2.user_id
+         HAVING COUNT(DISTINCT s2.playlist_id) >= 2
+     ),
+-- select the soundtracks saved by my similar users
+     candidate_tracks AS (
+         SELECT
+             c.track_id,
+             COUNT(DISTINCT su.similar_user_id) AS num_similar_users
+         FROM "Saved" s
+                  JOIN "similar_users" su ON s.user_id = su.similar_user_id
+                  JOIN "Contains" c ON c.playlist_id = s.playlist_id
+         WHERE NOT EXISTS (
+             SELECT 1
+             FROM "Saved" s_me
+             JOIN "Contains" c_me
+             ON c_me.playlist_id = s_me.playlist_id
+             WHERE s_me.user_id = :current_user_id
+             AND c_me.track_id = c.track_id
+         )
+         GROUP BY c.track_id
+     ),
+     ranked AS (
+         SELECT
+             ct.track_id,
+             ct.num_similar_users,
+             sp.name,
+             sp.artists,
+             sp.energy,
+             sp.valence,
+             sp.popularity,
+             ROW_NUMBER() OVER (
+                 ORDER BY ct.num_similar_users DESC, sp.popularity DESC
+                 ) AS rec_rank
+         FROM "candidate_tracks" ct
+                  JOIN "Spotify" sp ON ct.track_id = sp.track_id
+     )
+SELECT
+    track_id,
+    name,
+    artists,
+    energy,
+    valence,
+    popularity,
+    num_similar_users
+FROM ranked
+WHERE rec_rank <= 30;
+
