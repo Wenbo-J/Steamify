@@ -24,14 +24,10 @@ app.delete("/music/playlists/:playlist_id/tracks", spotifyRoutes.deleteTrackFrom
 app.post("/music/playlists/:playlist_id/save", spotifyRoutes.savePlaylist);
 app.delete("/music/playlists/:playlist_id/save", spotifyRoutes.deleteSavedPlaylist);
 
-// Steam/Game Routes (if implemented)
-// Note: These routes may need to be implemented in steamRoutes.js
-// app.get("/games/", steamRoutes.allGames);
-// app.get("/games/:game_id", steamRoutes.game);
-// app.get("/games/:game_id/recommended_tracks", steamRoutes.getGameSessionTracks);
-
-// Recommendation Routes (if implemented)
-// app.get("/recommends/:game_id", steamRoutes.recommended_tracks);
+// Steam/Game Routes
+app.get("/games/", steamRoutes.getAllGames);
+app.get("/games/:game_id", steamRoutes.getGame);
+app.get("/games/:game_id/recommended_tracks", steamRoutes.getGameRecommendedTracks);
 
 // Analytics Routes (if implemented)
 // app.get("/genres/steam/audio_profile", steamRoutes.getGenreAudioProfile);
