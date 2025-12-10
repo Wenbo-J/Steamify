@@ -1,58 +1,423 @@
+/* --- 1. FONTS - Must be first --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+/* --- 2. TAILWIND DIRECTIVES --- */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
-  --bg-color: #050505;
-  --surface-color: #121212;
-  --text-main: #e0e0e0;
-  --text-muted: #505050;
-  --accent: #00ff94; /* Cyber-green */
-  --danger: #ff4040;
-  --font-mono: 'Space Mono', monospace; /* Import this from Google Fonts */
-  --font-sans: 'Inter', sans-serif;      /* Import this from Google Fonts */
+  /* Base/Dark Background - Steam-like dark navy/charcoal (lightened) */
+  --bg-color: #1a2332;
+  --bg-secondary: #233447;
+  --bg-tertiary: #1f2838;
+  --surface-glass: rgba(35, 52, 71, 0.75);
+  --surface-glass-light: rgba(35, 52, 71, 0.5);
+  
+  /* Text Colors */
+  --text-main: #EDEDED;
+  --text-secondary: #A5A5A5;
+  --text-tertiary: #6b6b6b;
+  
+  /* Spotify Colors */
+  --spotify-green: #1DB954;
+  --spotify-green-hover: #1ed760;
+  --spotify-green-light: #1ed760;
+  --spotify-dark: #121212;
+  
+  /* Steam Colors - Cyan/light blue */
+  --steam-blue: #1B2838;
+  --steam-blue-light: #2a475e;
+  --steam-cyan: #53C8F3;
+  --steam-cyan-hover: #66C0F4;
+  --steam-blue-dark: #171a21;
+  --steam-blue-darker: #121821;
+  
+  /* Combined Accents */
+  --accent-primary: #1DB954; /* Spotify green */
+  --accent-secondary: #53C8F3; /* Cyan */
+  --accent-gradient: linear-gradient(135deg, #1DB954 0%, #53C8F3 100%);
+  
+  /* Premium Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 24px 64px rgba(0, 0, 0, 0.7);
+  --shadow-glow-green: 0 0 40px rgba(29, 185, 84, 0.2);
+  --shadow-glow-blue: 0 0 40px rgba(27, 40, 56, 0.3);
+  
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-medium: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.2);
+  
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Space Grotesk', 'Inter', sans-serif;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
 }
 
-body {
-  background-color: var(--bg-color);
+/* --- 3. GLOBAL RESET --- */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  background: linear-gradient(180deg, #1a2332 0%, #233447 50%, #1B2838 100%);
   color: var(--text-main);
   font-family: var(--font-sans);
-  margin: 0;
-  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "liga" 1, "kern" 1;
 }
 
-/* Custom Scrollbar for that 'Terminal' feel */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: var(--bg-color); }
-::-webkit-scrollbar-thumb { background: var(--surface-color); border: 1px solid var(--text-muted); }
-::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+#root {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+}
 
-.mono { font-family: var(--font-mono); }
-.text-accent { color: var(--accent); }
-
-/* Utility for the "Glass" card effect */
+/* --- 4. PREMIUM GLASS MORPHISM --- */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.3s ease;
+  background: linear-gradient(135deg, rgba(35, 52, 71, 0.85) 0%, rgba(26, 35, 50, 0.9) 100%);
+  backdrop-filter: blur(60px) saturate(200%);
+  -webkit-backdrop-filter: blur(60px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-lg);
+  box-shadow: 
+    var(--shadow-lg),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-panel::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  opacity: 0;
+  transition: opacity 0.4s ease;
 }
 
 .glass-panel:hover {
-  border-color: var(--accent);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 
+    var(--shadow-xl),
+    var(--shadow-glow-green),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.4);
   transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(35, 52, 71, 0.9) 0%, rgba(26, 35, 50, 0.95) 100%);
 }
 
-.btn-primary {
-  background: transparent;
-  border: 1px solid var(--text-main);
-  color: var(--text-main);
-  padding: 12px 24px;
-  font-family: var(--font-mono);
+.glass-panel:hover::before {
+  opacity: 1;
+}
+
+.glass-nav {
+  background: linear-gradient(180deg, rgba(26, 35, 50, 0.95) 0%, rgba(35, 52, 71, 0.9) 100%);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.4);
+}
+
+.text-label {
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-tertiary);
+  font-family: var(--font-sans);
+}
+
+/* --- 5. PREMIUM INPUTS --- */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+textarea,
+select {
+  background: rgba(26, 35, 50, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+textarea:focus,
+select:focus {
+  background: rgba(35, 52, 71, 0.7);
+  border-color: var(--spotify-green);
+  box-shadow: 
+    0 0 0 3px rgba(29, 185, 84, 0.1),
+    var(--shadow-md);
+}
+
+input::placeholder {
+  color: var(--text-tertiary);
+  opacity: 0.6;
+}
+
+/* Premium Range Slider */
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  background: transparent;
+  height: 6px;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 18px;
+  width: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.4),
+    0 0 0 4px rgba(29, 185, 84, 0.1);
+  margin-top: -6px;
   cursor: pointer;
-  transition: 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+input[type=range]::-webkit-slider-thumb:hover {
+  height: 20px;
+  width: 20px;
+  box-shadow: 
+    0 4px 16px rgba(29, 185, 84, 0.4),
+    0 0 0 6px rgba(29, 185, 84, 0.15);
+  background: var(--spotify-green);
+  border-color: var(--spotify-green);
+  transform: scale(1.1);
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+
+input[type=range]:hover::-webkit-slider-runnable-track {
+  background: linear-gradient(90deg, rgba(29, 185, 84, 0.2) 0%, rgba(27, 40, 56, 0.2) 100%);
+}
+
+/* --- 6. PREMIUM BUTTONS --- */
+.btn-primary {
+  background: var(--accent-gradient);
+  color: #000000;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 32px;
+  font-weight: 700;
+  font-size: 15px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 4px 16px rgba(29, 185, 84, 0.3),
+    0 0 0 0 rgba(29, 185, 84, 0);
+  letter-spacing: 0.3px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
 }
 
 .btn-primary:hover {
-  background: var(--accent);
-  color: var(--bg-color);
-  border-color: var(--accent);
-  box-shadow: 0 0 15px var(--accent);
+  background: linear-gradient(135deg, #1ed760 0%, #53C8F3 100%);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 24px rgba(29, 185, 84, 0.4),
+    0 0 0 4px rgba(29, 185, 84, 0.1);
+}
+
+.btn-primary:hover::before {
+  left: 100%;
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 
+    0 4px 16px rgba(29, 185, 84, 0.3),
+    0 0 0 2px rgba(29, 185, 84, 0.2);
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, rgba(27, 40, 56, 0.5) 0%, rgba(18, 24, 33, 0.5) 100%);
+  color: var(--steam-cyan);
+  border: 1px solid rgba(83, 200, 243, 0.2);
+  border-radius: 12px;
+  padding: 14px 32px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  backdrop-filter: blur(20px);
+  letter-spacing: 0.3px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-secondary::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(83, 200, 243, 0.1) 0%, rgba(27, 40, 56, 0.2) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: linear-gradient(135deg, rgba(27, 40, 56, 0.7) 0%, rgba(18, 24, 33, 0.7) 100%);
+  border-color: var(--steam-cyan);
+  color: #FFFFFF;
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 24px rgba(83, 200, 243, 0.3),
+    0 0 0 4px rgba(83, 200, 243, 0.1);
+}
+
+.btn-secondary:hover::before {
+  opacity: 1;
+}
+
+.btn-secondary:active {
+  transform: translateY(0);
+}
+
+/* --- 7. PREMIUM TYPOGRAPHY --- */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+/* --- 8. NOISE TEXTURE (Refined) --- */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 50;
+  mix-blend-mode: overlay;
+}
+
+/* --- 9. SCROLLBAR STYLING --- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(26, 35, 50, 0.4);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(29, 185, 84, 0.3) 0%, rgba(27, 40, 56, 0.3) 100%);
+}
+
+/* --- 10. SELECTION STYLING --- */
+::selection {
+  background: rgba(29, 185, 84, 0.3);
+  color: #ffffff;
+}
+
+::-moz-selection {
+  background: rgba(29, 185, 84, 0.3);
+  color: #ffffff;
+}
+
+/* --- 11. SMOOTH ANIMATIONS --- */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-slide-in {
+  animation: slideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Ensure all containers expand properly */
+body > #root {
+  width: 100%;
+  min-width: 100%;
+}
+
+/* Prevent any default browser margins/padding */
+html {
+  overflow-x: hidden;
+  overflow-y: auto;
 }
