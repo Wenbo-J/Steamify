@@ -1,7 +1,8 @@
 // Acknowledgement: using hw4a webdb as a starting point to build our own User Route
 
 const { Pool, types } = require('pg');
-const config = require('./config.json')
+const path = require('path');
+const config = require(path.join(__dirname, '../../config.json'))
 
 // Override the default parsing for BIGINT (PostgreSQL type ID 20)
 types.setTypeParser(20, val => parseInt(val, 10)); //DO NOT DELETE THIS
