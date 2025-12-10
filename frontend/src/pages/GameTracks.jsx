@@ -8,7 +8,7 @@ const GameTracks = () => {
   const { gameId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const game = location.state?.game;
 
   const [recommendations, setRecommendations] = useState([]);
@@ -173,7 +173,12 @@ const GameTracks = () => {
       if (isAuthenticated) {
         // User is authenticated - save to server
         console.log('[handleCreatePlaylist] User authenticated, saving to server');
-        const result = await createPlaylist(playlistName, trackIds);
+        const userId = user?.user_id;
+        console.log('[handleCreatePlaylist] User ID:', userId);
+        if (!userId) {
+          throw new Error('User ID not found. Please sign in again.');
+        }
+        const result = await createPlaylist(playlistName, trackIds, userId);
         console.log('[handleCreatePlaylist] Server result:', result);
         if (result.playlist_id) {
           // Also save locally for display

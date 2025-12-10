@@ -104,12 +104,30 @@ export const getPlaylist = async (playlistId) => {
   }
 };
 
-export const createPlaylist = async (playlistName, trackIds = []) => {
+export const getPlaylistTracks = async (playlistId) => {
   try {
+    const res = await fetch(`${BASE_URL}/music/playlists/${playlistId}/tracks`);
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: 'Network error' }));
+      throw new Error(error.error || error.message || `HTTP error! status: ${res.status}`);
+    }
+    return handleResponse(res);
+  } catch (err) {
+    console.error('Error fetching playlist tracks:', err);
+    throw err;
+  }
+};
+
+export const createPlaylist = async (playlistName, trackIds = [], userId = null) => {
+  try {
+    const body = { playlist_name: playlistName, track_id: trackIds };
+    if (userId) {
+      body.user_id = userId;
+    }
     const res = await fetch(`${BASE_URL}/music/playlists`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ playlist_name: playlistName, track_id: trackIds })
+      body: JSON.stringify(body)
     });
     return handleResponse(res);
   } catch (err) {
