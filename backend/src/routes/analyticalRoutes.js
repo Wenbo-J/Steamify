@@ -29,10 +29,10 @@ const pool = new Pool({
  * Query parameters:
  *  - game_name (required): Steam game name
  *  - session_duration_s (optional, default 1800): target session length in seconds
- *  - min_energy (optional, default 25)
- *  - max_energy (optional, default 75)
- *  - min_valence (optional, default 25)
- *  - max_valence (optional, default 75)
+ *  - min_energy (optional, default 0): accepts 0-100 (converted to 0-1) or 0-1 directly
+ *  - max_energy (optional, default 1): accepts 0-100 (converted to 0-1) or 0-1 directly
+ *  - min_valence (optional, default 0): accepts 0-100 (converted to 0-1) or 0-1 directly
+ *  - max_valence (optional, default 1): accepts 0-100 (converted to 0-1) or 0-1 directly
  */
 const search_songs = async function (req, res) {
 
@@ -44,10 +44,18 @@ const search_songs = async function (req, res) {
   const sessionDuration = Number(req.query.session_duration_s ?? 1800); // 30 min default
   const sessionMinutes = sessionDuration / 60.0;
 
-  const minEnergy = Number(req.query.min_energy ?? 25);
-  const maxEnergy = Number(req.query.max_energy ?? 75);
-  const minValence = Number(req.query.min_valence ?? 25);
-  const maxValence = Number(req.query.max_valence ?? 75);
+  // Frontend sends 0-100, but database stores 0-1, so convert if values are > 1
+  // Defaults: 0-1 scale (0.25-0.75 = 25-75 on 0-100 scale)
+  const rawMinEnergy = Number(req.query.min_energy ?? 0);
+  const rawMaxEnergy = Number(req.query.max_energy ?? 1);
+  const rawMinValence = Number(req.query.min_valence ?? 0);
+  const rawMaxValence = Number(req.query.max_valence ?? 1);
+  
+  // Convert from 0-100 scale to 0-1 scale if needed
+  const minEnergy = rawMinEnergy > 1 ? rawMinEnergy / 100 : rawMinEnergy;
+  const maxEnergy = rawMaxEnergy > 1 ? rawMaxEnergy / 100 : rawMaxEnergy;
+  const minValence = rawMinValence > 1 ? rawMinValence / 100 : rawMinValence;
+  const maxValence = rawMaxValence > 1 ? rawMaxValence / 100 : rawMaxValence;
 
   const query = `
     WITH candidate_tracks AS (
@@ -90,11 +98,14 @@ const search_songs = async function (req, res) {
        FROM ranked
     )
     SELECT
+       track_id,
        track_name,
+       track_duration_s,
        tempo,
        energy,
        valence,
-       ROUND(fit_score) AS fit_score
+       ROUND(fit_score) AS fit_score,
+       match_score
     FROM ranked_with_cutoff
     WHERE cum_duration_s <= cutoff_s
     ORDER BY fit_score DESC;
