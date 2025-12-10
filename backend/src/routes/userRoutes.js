@@ -62,7 +62,7 @@ const userAccounts = async function(req, res) {
       console.log('User not found');
       res.json({});
     } else {
-      res.json(data.rows[0]);
+      res.json(data.rows);
     }
   });
 }
@@ -85,13 +85,16 @@ const updateUser = async function(req, res) {
     } else if (data.rows.length === 0) {
       console.log('User not found');
       res.json({});
+    } else if (data.rows.length === 0) {
+      res.status(404).json({message: 'Playlists not found'});
     } else {
       res.json({
         ...data.rows[0],
         message: 'User updated successfully'
       });
     }
-  });
+  }
+  )
 }
 
 // Route 8: POST /music/playlists/:playlist_id/save
