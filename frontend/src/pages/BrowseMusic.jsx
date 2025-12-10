@@ -53,7 +53,7 @@ const BrowseMusic = () => {
       <div className="glass-panel p-4">
         <input
           type="text"
-          placeholder="Search tracks by name or artist..."
+          placeholder="Search tracks by name..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#1DB954]"

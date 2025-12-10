@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getUserPlaylists, getPlaylist, deletePlaylist, createPlaylist } from '../services/api';
+import { getUserPlaylists, getPlaylist, getPlaylistTracks, deletePlaylist, createPlaylist } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { getLocalPlaylists, deleteLocalPlaylist, getLocalPlaylist } from '../utils/localPlaylists';
 
@@ -64,15 +64,17 @@ const UserPlaylists = () => {
           setPlaylistTracks(localPlaylist.tracks || []);
         }
       } else {
-        // Saved playlist
-        const playlistData = await getPlaylist(playlistId);
+        // Saved playlist - fetch both playlist info and tracks
+        const [playlistData, tracksData] = await Promise.all([
+          getPlaylist(playlistId),
+          getPlaylistTracks(playlistId)
+        ]);
         setSelectedPlaylist(playlistData);
-        // Note: You'll need to implement an endpoint to get tracks in a playlist
-        // For now, we'll just show the playlist info
-        setPlaylistTracks([]);
+        setPlaylistTracks(Array.isArray(tracksData) ? tracksData : []);
       }
     } catch (err) {
       console.error('Failed to load playlist:', err);
+      setPlaylistTracks([]);
     }
   };
 
@@ -84,7 +86,7 @@ const UserPlaylists = () => {
     
     setSavingPlaylist(true);
     try {
-      const result = await createPlaylist(tempPlaylist.playlist_name, tempPlaylist.track_ids);
+      const result = await createPlaylist(tempPlaylist.playlist_name, tempPlaylist.track_ids, userId);
       if (result.playlist_id) {
         // Delete from local storage
         deleteLocalPlaylist(tempPlaylist.playlist_id);
@@ -200,7 +202,7 @@ const UserPlaylists = () => {
                       }`}
                     >
                       <h3 className="font-semibold text-white">{playlist.playlist_name}</h3>
-                      <p className="text-sm text-gray-400">{playlist.total_tracks || 0} tracks</p>
+                      
                     </div>
                   ))}
                 </div>
@@ -319,17 +321,40 @@ const UserPlaylists = () => {
 
               {playlistTracks.length > 0 ? (
                 <div className="space-y-2 max-h-96 overflow-y-auto">
+                  <div className="text-sm text-gray-400 mb-2 px-2">
+                    {playlistTracks.length} {playlistTracks.length === 1 ? 'track' : 'tracks'}
+                  </div>
                   {playlistTracks.map((track, idx) => (
                     <div
                       key={track.track_id || idx}
-                      className="p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all"
+                      className="p-4 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 hover:border-[#1DB954]/30 transition-all"
                     >
-                      <h3 className="font-semibold text-white">{track.name || 'Unknown Track'}</h3>
-                      <p className="text-sm text-gray-400">{track.artists || 'Unknown Artist'}</p>
-                      {track.duration && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          {Math.floor(track.duration / 60)}:{(track.duration % 60).toFixed(0).padStart(2, '0')}
-                        </p>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-white">{track.name || 'Unknown Track'}</h3>
+                          <p className="text-sm text-gray-400 mt-1">{track.artists || 'Unknown Artist'}</p>
+                          {track.genres && (
+                            <p className="text-xs text-gray-500 mt-1">{track.genres}</p>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-end gap-1 ml-4">
+                          {track.duration && (
+                            <span className="text-xs text-gray-500 font-mono">
+                              {Math.floor(track.duration / 60)}:{(track.duration % 60).toFixed(0).padStart(2, '0')}
+                            </span>
+                          )}
+                          {track.popularity && (
+                            <span className="text-xs text-[#1DB954]">
+                              Popularity: {track.popularity}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {(track.energy || track.valence) && (
+                        <div className="flex gap-4 mt-2 text-xs text-gray-500">
+                          {track.energy !== undefined && <span>Energy: {track.energy.toFixed(2)}</span>}
+                          {track.valence !== undefined && <span>Valence: {track.valence.toFixed(2)}</span>}
+                        </div>
                       )}
                     </div>
                   ))}
@@ -340,8 +365,7 @@ const UserPlaylists = () => {
                 </div>
               ) : (
                 <div className="text-center py-12 text-gray-400">
-                  <p>Track list will appear here</p>
-                  <p className="text-sm mt-2">(Endpoint to fetch playlist tracks needs to be implemented)</p>
+                  <p>Loading tracks...</p>
                 </div>
               )}
             </div>
