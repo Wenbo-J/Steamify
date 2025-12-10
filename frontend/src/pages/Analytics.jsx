@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { getGenreAudioProfile, getTopAudioGenres, getSimilarUserPlaylist } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const Analytics = () => {
   const [audioProfile, setAudioProfile] = useState([]);
   const [topGenres, setTopGenres] = useState([]);
   const [similarTracks, setSimilarTracks] = useState([]);
   const [loading, setLoading] = useState({ profile: false, genres: false, similar: false });
-  const [userId] = useState('test-user-id'); // In real app, get from auth context
+  const { user } = useAuth();
+  const userId = user?.user_id;
 
   useEffect(() => {
     loadAudioProfile();

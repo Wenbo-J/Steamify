@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { getUserPlaylists, getPlaylist, deletePlaylist } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const UserPlaylists = () => {
   const [playlists, setPlaylists] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [playlistTracks, setPlaylistTracks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [userId] = useState('test-user-id'); // In real app, get from auth context
+  const { user } = useAuth();
+  const userId = user?.user_id;
   const [editingName, setEditingName] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
 
