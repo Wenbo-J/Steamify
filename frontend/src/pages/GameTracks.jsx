@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { getGameRecommendations, getRecommendations, createPlaylist, getTrack } from '../services/api';
+import { saveLocalPlaylist, getLocalPlaylists, deleteLocalPlaylist } from '../utils/localPlaylists';
 
 const GameTracks = () => {
   const { gameId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const game = location.state?.game;
 
   const [recommendations, setRecommendations] = useState([]);
@@ -21,12 +24,29 @@ const GameTracks = () => {
   const [playlistName, setPlaylistName] = useState('');
   const [creatingPlaylist, setCreatingPlaylist] = useState(false);
   const [selectedTrackDetail, setSelectedTrackDetail] = useState(null);
+  const [activeTab, setActiveTab] = useState('tracks'); // 'tracks' or 'playlists'
+  const [createdPlaylists, setCreatedPlaylists] = useState([]);
+  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   useEffect(() => {
     if (gameId) {
       handleGenerate();
     }
+    // Load created playlists on mount
+    refreshPlaylists();
   }, [gameId]);
+
+  const refreshPlaylists = () => {
+    const playlists = getLocalPlaylists();
+    setCreatedPlaylists(playlists);
+    console.log('Refreshed playlists:', playlists.length);
+  };
+
+  // Debug: Log when activeTab changes
+  useEffect(() => {
+    console.log('Active tab changed to:', activeTab);
+  }, [activeTab]);
 
   const handleGenerate = async () => {
     if (!gameId) return;
@@ -34,19 +54,20 @@ const GameTracks = () => {
     try {
       console.log('[GameTracks] Fetching recommendations for game:', gameId);
       
-      // First try Route 6 (recommendations from Recommendations table)
-      const route6Result = await getRecommendations(gameId);
-      console.log('[GameTracks] Route 6 result:', route6Result);
+      // Check if filters are at default values (no filtering applied)
+      const hasNonDefaultFilters = 
+        filters.sessionMinutes !== 60 ||
+        filters.minEnergy !== 0 ||
+        filters.maxEnergy !== 100 ||
+        filters.minValence !== 0 ||
+        filters.maxValence !== 100;
       
       let data = [];
       
-      // Check if Route 6 returned data
-      if (route6Result && route6Result.data && route6Result.data.length > 0) {
-        console.log('[GameTracks] Using Route 6 results:', route6Result.data.length, 'tracks');
-        data = route6Result.data;
-      } else if (route6Result && route6Result.route6Error) {
-        console.log('[GameTracks] Route 6 had an error, trying Route 12.1...');
-        // Route 6 had an error, try Route 12.1
+      // If filters are applied, use Route 12.1 (respects duration and filters)
+      // Otherwise, try Route 6 first (pre-computed recommendations)
+      if (hasNonDefaultFilters) {
+        console.log('[GameTracks] Filters applied, using Route 12.1 (respects duration/filters)...');
         data = await getGameRecommendations(
           gameId,
           filters.sessionMinutes,
@@ -56,16 +77,38 @@ const GameTracks = () => {
           filters.maxValence
         );
       } else {
-        // Route 6 returned empty (no recommendations in table), try Route 12.1
-        console.log('[GameTracks] Route 6 returned empty (no data in Recommendations table), trying Route 12.1 with filters...');
-        data = await getGameRecommendations(
-          gameId,
-          filters.sessionMinutes,
-          filters.minEnergy,
-          filters.maxEnergy,
-          filters.minValence,
-          filters.maxValence
-        );
+        // No filters, try Route 6 first (pre-computed recommendations)
+        console.log('[GameTracks] No filters applied, trying Route 6 first...');
+        const route6Result = await getRecommendations(gameId);
+        console.log('[GameTracks] Route 6 result:', route6Result);
+        
+        // Check if Route 6 returned data
+        if (route6Result && route6Result.data && route6Result.data.length > 0) {
+          console.log('[GameTracks] Using Route 6 results:', route6Result.data.length, 'tracks');
+          data = route6Result.data;
+        } else if (route6Result && route6Result.route6Error) {
+          console.log('[GameTracks] Route 6 had an error, trying Route 12.1...');
+          // Route 6 had an error, try Route 12.1
+          data = await getGameRecommendations(
+            gameId,
+            filters.sessionMinutes,
+            filters.minEnergy,
+            filters.maxEnergy,
+            filters.minValence,
+            filters.maxValence
+          );
+        } else {
+          // Route 6 returned empty (no recommendations in table), try Route 12.1
+          console.log('[GameTracks] Route 6 returned empty (no data in Recommendations table), trying Route 12.1...');
+          data = await getGameRecommendations(
+            gameId,
+            filters.sessionMinutes,
+            filters.minEnergy,
+            filters.maxEnergy,
+            filters.minValence,
+            filters.maxValence
+          );
+        }
       }
       
       console.log('[GameTracks] Final recommendations count:', data?.length || 0);
@@ -80,34 +123,101 @@ const GameTracks = () => {
   };
 
   const toggleTrackSelection = (trackId) => {
+    console.log('[toggleTrackSelection] Toggling track:', trackId);
     const newSelected = new Set(selectedTracks);
     if (newSelected.has(trackId)) {
       newSelected.delete(trackId);
+      console.log('[toggleTrackSelection] Removed, new size:', newSelected.size);
     } else {
       newSelected.add(trackId);
+      console.log('[toggleTrackSelection] Added, new size:', newSelected.size);
     }
     setSelectedTracks(newSelected);
   };
 
   const handleCreatePlaylist = async () => {
+    console.log('[handleCreatePlaylist] Called');
+    console.log('[handleCreatePlaylist] playlistName:', playlistName);
+    console.log('[handleCreatePlaylist] selectedTracks:', selectedTracks);
+    console.log('[handleCreatePlaylist] selectedTracks.size:', selectedTracks.size);
+    
     if (!playlistName.trim() || selectedTracks.size === 0) {
       alert('Please enter a playlist name and select at least one track');
       return;
     }
+    
     setCreatingPlaylist(true);
     try {
       const trackIds = Array.from(selectedTracks);
-      const result = await createPlaylist(playlistName, trackIds);
-      if (result.playlist_id) {
-        alert('Playlist created successfully!');
+      console.log('[handleCreatePlaylist] trackIds:', trackIds);
+      console.log('[handleCreatePlaylist] recommendations:', recommendations.length);
+      
+      // Get full track details for the selected tracks
+      // Try multiple ways to match tracks
+      const selectedTrackDetails = recommendations.filter(t => {
+        const trackId = t.track_id || t.id;
+        const matches = trackIds.includes(trackId) || 
+                       trackIds.some(id => String(id) === String(trackId));
+        return matches;
+      });
+      
+      console.log('[handleCreatePlaylist] selectedTrackDetails:', selectedTrackDetails.length);
+      console.log('[handleCreatePlaylist] First recommendation sample:', recommendations[0]);
+      console.log('[handleCreatePlaylist] First selectedTrackDetail sample:', selectedTrackDetails[0]);
+      
+      // If we can't find all track details, that's okay - we'll store what we have
+      if (selectedTrackDetails.length < trackIds.length) {
+        console.warn(`[handleCreatePlaylist] Only found ${selectedTrackDetails.length} out of ${trackIds.length} track details`);
+      }
+      
+      if (isAuthenticated) {
+        // User is authenticated - save to server
+        console.log('[handleCreatePlaylist] User authenticated, saving to server');
+        const result = await createPlaylist(playlistName, trackIds);
+        console.log('[handleCreatePlaylist] Server result:', result);
+        if (result.playlist_id) {
+          // Also save locally for display
+          const localPlaylist = saveLocalPlaylist(playlistName, trackIds, selectedTrackDetails);
+          console.log('[handleCreatePlaylist] Saved locally:', localPlaylist);
+          refreshPlaylists();
+          setPlaylistName('');
+          setSelectedTracks(new Set());
+          setActiveTab('playlists'); // Switch to playlists tab
+          setSelectedPlaylist(localPlaylist);
+          setShowSuccessMessage(true);
+          setTimeout(() => setShowSuccessMessage(false), 3000);
+        } else {
+          console.error('[handleCreatePlaylist] Server did not return playlist_id');
+          alert('Failed to create playlist: Server did not return a playlist ID');
+        }
+      } else {
+        // User is not authenticated - save locally
+        console.log('[handleCreatePlaylist] User not authenticated, saving locally');
+        const localPlaylist = saveLocalPlaylist(playlistName, trackIds, selectedTrackDetails);
+        console.log('[handleCreatePlaylist] Local playlist saved:', localPlaylist);
+        refreshPlaylists();
         setPlaylistName('');
         setSelectedTracks(new Set());
+        setActiveTab('playlists'); // Switch to playlists tab
+        setSelectedPlaylist(localPlaylist);
+        setShowSuccessMessage(true);
+        setTimeout(() => setShowSuccessMessage(false), 3000);
       }
     } catch (err) {
-      console.error('Failed to create playlist:', err);
-      alert('Failed to create playlist');
+      console.error('[handleCreatePlaylist] Error:', err);
+      console.error('[handleCreatePlaylist] Error stack:', err.stack);
+      alert('Failed to create playlist: ' + (err.message || 'Unknown error'));
     } finally {
       setCreatingPlaylist(false);
+    }
+  };
+
+  const handleDeletePlaylist = (playlistId) => {
+    if (!confirm('Are you sure you want to delete this playlist?')) return;
+    deleteLocalPlaylist(playlistId);
+    refreshPlaylists();
+    if (selectedPlaylist?.playlist_id === playlistId) {
+      setSelectedPlaylist(null);
     }
   };
 
@@ -122,6 +232,25 @@ const GameTracks = () => {
 
   return (
     <div className="space-y-6">
+      {/* Success Message */}
+      {showSuccessMessage && (
+        <div className="fixed top-24 right-6 z-50 animate-fade-in">
+          <div className="bg-gradient-to-r from-[#1DB954]/90 to-[#1B2838]/90 border border-[#1DB954] rounded-lg p-4 shadow-2xl backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-[#1DB954] rounded-full flex items-center justify-center">
+                <span className="text-white text-xl">✓</span>
+              </div>
+              <div>
+                <p className="text-white font-semibold">Playlist Created!</p>
+                <p className="text-gray-300 text-sm">
+                  {isAuthenticated ? 'Saved to your account' : 'Saved temporarily (sign in to save permanently)'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -210,8 +339,38 @@ const GameTracks = () => {
           </div>
         </div>
 
-        {/* Right: Tracks */}
-        <div className="lg:col-span-3">
+        {/* Right: Tracks or Playlists */}
+        <div className="lg:col-span-3 space-y-4">
+          {/* Tabs - Made more visible */}
+          <div className="bg-white/5 backdrop-blur-xl rounded-xl border border-white/10 p-1">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setActiveTab('tracks')}
+                className={`flex-1 py-3 px-4 font-semibold transition-all rounded-lg ${
+                  activeTab === 'tracks'
+                    ? 'bg-gradient-to-r from-[#1DB954] to-[#1DB954]/80 text-white shadow-lg shadow-[#1DB954]/30'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                Recommended Tracks ({recommendations.length})
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('playlists');
+                  refreshPlaylists();
+                }}
+                className={`flex-1 py-3 px-4 font-semibold transition-all rounded-lg ${
+                  activeTab === 'playlists'
+                    ? 'bg-gradient-to-r from-[#1DB954] to-[#1DB954]/80 text-white shadow-lg shadow-[#1DB954]/30'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                My Playlists ({createdPlaylists.length})
+              </button>
+            </div>
+          </div>
+
+          {activeTab === 'tracks' ? (
           <div className="glass-panel p-6">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-16">
@@ -249,13 +408,26 @@ const GameTracks = () => {
                           placeholder="Enter playlist name..."
                           className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#1DB954]"
                         />
+                        {!isAuthenticated && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            ⚠️ Playlist will be temporary (lost on page refresh). Sign in to save permanently.
+                          </p>
+                        )}
                       </div>
                       <button
-                        onClick={handleCreatePlaylist}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('[Button] Create playlist clicked');
+                          console.log('[Button] playlistName:', playlistName);
+                          console.log('[Button] selectedTracks.size:', selectedTracks.size);
+                          console.log('[Button] creatingPlaylist:', creatingPlaylist);
+                          handleCreatePlaylist();
+                        }}
                         disabled={creatingPlaylist || !playlistName.trim()}
                         className="btn-primary"
                       >
-                        {creatingPlaylist ? 'Creating...' : `Create (${selectedTracks.size})`}
+                        {creatingPlaylist ? 'Creating...' : isAuthenticated ? `Save (${selectedTracks.size})` : `Create Temp (${selectedTracks.size})`}
                       </button>
                     </div>
                   </div>
@@ -298,13 +470,13 @@ const GameTracks = () => {
                               {track.track_name || track.name}
                             </h3>
                             <p className="text-sm text-gray-400">
-                              Energy: {track.energy} | Valence: {track.valence} | Fit: {track.fit_score?.toFixed(1)}
+                              Energy: {track.energy} | Valence: {track.valence} | Match Score: {track.match_score}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
                           <span className="text-sm text-gray-500 font-mono">
-                            {Math.floor((track.track_duration_s || 0) / 60)}:{(track.track_duration_s || 0) % 60}
+                            {Math.floor((track.duration || 0) / 60)}:{(track.duration || 0) % 60}
                           </span>
                         </div>
                       </div>
@@ -314,6 +486,118 @@ const GameTracks = () => {
               </div>
             )}
           </div>
+          ) : (
+          <div className="glass-panel p-6">
+            {createdPlaylists.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-gray-500">
+                <p className="text-xl mb-2">No playlists created yet</p>
+                <p className="text-sm">Select tracks and create a playlist to see it here</p>
+                <button
+                  onClick={() => setActiveTab('tracks')}
+                  className="mt-4 btn-primary"
+                >
+                  Go to Tracks
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left: Playlist List */}
+                <div>
+                  <h2 className="text-xl font-bold mb-4 text-white">Your Playlists</h2>
+                  <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                    {createdPlaylists.map((playlist) => (
+                      <div
+                        key={playlist.playlist_id}
+                        onClick={() => setSelectedPlaylist(playlist)}
+                        className={`p-4 rounded-lg cursor-pointer transition-all border ${
+                          selectedPlaylist?.playlist_id === playlist.playlist_id
+                            ? 'bg-gradient-to-r from-[#1DB954]/30 to-[#1B2838]/30 border-[#1DB954]'
+                            : 'bg-white/5 border-white/10 hover:bg-white/10'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-white">{playlist.playlist_name}</h3>
+                            <p className="text-sm text-gray-400 mt-1">
+                              {playlist.total_tracks || 0} tracks • {playlist.total_duration_minutes?.toFixed(1) || 0} min
+                            </p>
+                            {playlist.is_temporary && (
+                              <span className="inline-block mt-2 px-2 py-1 bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded text-xs">
+                                ⚠️ Temporary
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeletePlaylist(playlist.playlist_id);
+                            }}
+                            className="text-red-400 hover:text-red-300 ml-2"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Right: Playlist Details */}
+                <div>
+                  {selectedPlaylist ? (
+                    <div>
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h2 className="text-2xl font-bold text-white">{selectedPlaylist.playlist_name}</h2>
+                          <p className="text-gray-400 mt-1">
+                            {selectedPlaylist.total_tracks || 0} tracks • {selectedPlaylist.total_duration_minutes?.toFixed(1) || 0} minutes
+                          </p>
+                          {selectedPlaylist.is_temporary && (
+                            <p className="text-xs text-yellow-400 mt-2">
+                              ⚠️ This playlist is temporary and will be lost on page refresh
+                            </p>
+                          )}
+                        </div>
+                        {!isAuthenticated && selectedPlaylist.is_temporary && (
+                          <button
+                            onClick={() => navigate('/login', { state: { from: { pathname: `/tracks/${gameId}` } } })}
+                            className="btn-primary text-sm"
+                          >
+                            Sign In to Save
+                          </button>
+                        )}
+                      </div>
+                      <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                        {selectedPlaylist.tracks && selectedPlaylist.tracks.length > 0 ? (
+                          selectedPlaylist.tracks.map((track, idx) => (
+                            <div
+                              key={track.track_id || idx}
+                              className="p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all"
+                            >
+                              <h3 className="font-semibold text-white">{track.name || 'Unknown Track'}</h3>
+                              <p className="text-sm text-gray-400">{track.artists || 'Unknown Artist'}</p>
+                              {track.duration && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {Math.floor(track.duration / 60)}:{(track.duration % 60).toFixed(0).padStart(2, '0')}
+                                </p>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-gray-400 text-center py-8">No tracks in this playlist</p>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-full min-h-[400px] text-gray-400">
+                      <p>Select a playlist to view details</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          )}
         </div>
       </div>
 

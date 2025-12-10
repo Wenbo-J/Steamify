@@ -40,8 +40,25 @@ const Login = () => {
     }
   };
 
-  const handleGoogleError = () => {
-    setError('Google sign in was cancelled or failed');
+  const handleGoogleError = (error) => {
+    console.error('Google OAuth error:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
+    
+    if (error?.error === 'invalid_client' || error?.type === 'invalid_client') {
+      setError(
+        'Google OAuth client ID is invalid. Please check:\n' +
+        '1. Your VITE_GOOGLE_CLIENT_ID in the .env file\n' +
+        '2. In Google Cloud Console, ensure:\n' +
+        '   - OAuth consent screen is configured\n' +
+        '   - Authorized JavaScript origins includes: http://localhost:5173 (or your dev server URL)\n' +
+        '   - Authorized redirect URIs includes: http://localhost:5173 (or your dev server URL)\n' +
+        '3. Restart your dev server after changing .env'
+      );
+    } else if (error?.error === 'popup_closed_by_user') {
+      setError('Sign in was cancelled. Please try again.');
+    } else {
+      setError(`Google sign in failed: ${error?.error || error?.type || 'Unknown error'}. Please try again.`);
+    }
   };
 
   return (
@@ -70,20 +87,26 @@ const Login = () => {
                 <div className="w-8 h-8 border-4 border-[#1DB954] border-t-transparent rounded-full animate-spin"></div>
               </div>
             )}
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={handleGoogleError}
-              theme="filled_black"
-              size="large"
-              text="signin_with"
-              shape="rectangular"
-              logo_alignment="left"
-              width="100%"
-            />
+            <div className="mb-4">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                theme="filled_black"
+                size="large"
+                text="signin_with"
+                shape="rectangular"
+                logo_alignment="left"
+                width="100%"
+                useOneTap={false}
+              />
+            </div>
+            <div className="text-xs text-gray-500 text-center mt-2">
+              Client ID: {import.meta.env.VITE_GOOGLE_CLIENT_ID.substring(0, 20)}...
+            </div>
           </div>
         ) : (
           <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-yellow-400 text-sm">
-            Google OAuth is not configured. Please set VITE_GOOGLE_CLIENT_ID in your .env file.
+            Google OAuth is not configured. Please set VITE_GOOGLE_CLIENT_ID in your .env file and restart the dev server.
           </div>
         )}
 

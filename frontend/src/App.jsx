@@ -16,6 +16,9 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 // Log for debugging
 console.log('Google Client ID loaded:', GOOGLE_CLIENT_ID ? 'Yes' : 'No');
+if (GOOGLE_CLIENT_ID) {
+  console.log('Google Client ID (first 20 chars):', GOOGLE_CLIENT_ID.substring(0, 20) + '...');
+}
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -39,22 +42,8 @@ function AppRoutes() {
       <Route path="/tracks/:gameId" element={<GameTracks />} />
       <Route path="/browse" element={<BrowseMusic />} />
       <Route path="/login" element={<Login />} />
-      <Route 
-        path="/playlists" 
-        element={
-          <ProtectedRoute>
-            <UserPlaylists />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/analytics" 
-        element={
-          <ProtectedRoute>
-            <Analytics />
-          </ProtectedRoute>
-        } 
-      />
+      <Route path="/playlists" element={<UserPlaylists />} />
+      <Route path="/analytics" element={<Analytics />} />
     </Routes>
   );
 }
