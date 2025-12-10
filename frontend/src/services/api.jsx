@@ -114,3 +114,31 @@ export const getSimilarUserPlaylist = async (userId) => {
   const res = await fetch(`${BASE_URL}/playlist/similarUsers?user_id=${userId}`);
   return res.json();
 };
+
+// Authentication Routes
+export const signup = async (email, password) => {
+  const res = await fetch(`${BASE_URL}/auth/signup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+  return res.json();
+};
+
+export const login = async (email, password) => {
+  const res = await fetch(`${BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+  return res.json();
+};
+
+export const changePassword = async (userId, oldPassword, newPassword) => {
+  const res = await fetch(`${BASE_URL}/auth/password`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, old_password: oldPassword, new_password: newPassword })
+  });
+  return res.json();
+};

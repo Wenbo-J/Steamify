@@ -1,8 +1,11 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const Layout = ({ children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut, isAuthenticated } = useAuth();
   
   const NavLink = ({ to, label }) => {
     const active = location.pathname === to;
@@ -47,11 +50,51 @@ const Layout = ({ children }) => {
           <span className="font-black text-xl tracking-tight text-[#EDEDED] group-hover:text-[#1DB954] transition-colors duration-300">Steamify</span>
         </Link>
 
-        <div className="hidden md:flex gap-2 bg-gradient-to-r from-white/[0.03] to-white/[0.01] p-1.5 rounded-2xl border border-white/10 backdrop-blur-2xl shadow-2xl">
-          <NavLink to="/" label="Home" />
-          <NavLink to="/browse" label="Browse Music" />
-          <NavLink to="/playlists" label="My Playlists" />
-          <NavLink to="/analytics" label="Analytics" />
+        <div className="hidden md:flex items-center gap-4">
+          <div className="flex gap-2 bg-gradient-to-r from-white/[0.03] to-white/[0.01] p-1.5 rounded-2xl border border-white/10 backdrop-blur-2xl shadow-2xl">
+            <NavLink to="/" label="Home" />
+            <NavLink to="/browse" label="Browse Music" />
+            {isAuthenticated && (
+              <>
+                <NavLink to="/playlists" label="My Playlists" />
+                <NavLink to="/analytics" label="Analytics" />
+              </>
+            )}
+          </div>
+          
+          {isAuthenticated ? (
+            <div className="flex items-center gap-3">
+              {user?.picture ? (
+                <img 
+                  src={user.picture} 
+                  alt={user.name || user.email} 
+                  className="w-10 h-10 rounded-full border-2 border-[#1DB954]/30"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#1DB954] to-[#53C8F3] flex items-center justify-center text-white font-bold text-sm">
+                  {user?.email?.charAt(0).toUpperCase() || 'U'}
+                </div>
+              )}
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold text-[#EDEDED]">
+                  {user?.name || user?.email?.split('@')[0] || 'User'}
+                </span>
+                <button
+                  onClick={signOut}
+                  className="text-xs text-[#A5A5A5] hover:text-[#EDEDED] transition-colors text-left"
+                >
+                  Sign out
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => navigate('/login')}
+              className="btn-secondary text-sm px-4 py-2"
+            >
+              Sign In
+            </button>
+          )}
         </div>
 
         {/* Mobile menu button placeholder */}
