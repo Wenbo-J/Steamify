@@ -7,6 +7,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 
 :root {
+<<<<<<< HEAD
   /* Base/Dark Background - Steam-like dark navy/charcoal (lightened) */
   --bg-color: #1a2332;
   --bg-secondary: #233447;
@@ -421,3 +422,62 @@ html {
   overflow-x: hidden;
   overflow-y: auto;
 }
+=======
+  --bg-color: #050505;
+  --surface-color: #121212;
+  --text-main: #e0e0e0;
+  --text-muted: #505050;
+  --accent: #00ff94; /* Cyber-green */
+  --danger: #ff4040;
+  --font-mono: 'Space Mono', monospace; /* Import this from Google Fonts */
+  --font-sans: 'Inter', sans-serif;      /* Import this from Google Fonts */
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  margin: 0;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar for that 'Terminal' feel */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-color); }
+::-webkit-scrollbar-thumb { background: var(--surface-color); border: 1px solid var(--text-muted); }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+.mono { font-family: var(--font-mono); }
+.text-accent { color: var(--accent); }
+
+/* Utility for the "Glass" card effect */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.glass-panel:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.btn-primary {
+  background: transparent;
+  border: 1px solid var(--text-main);
+  color: var(--text-main);
+  padding: 12px 24px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-primary:hover {
+  background: var(--accent);
+  color: var(--bg-color);
+  border-color: var(--accent);
+  box-shadow: 0 0 15px var(--accent);
+}
+>>>>>>> 1be53d9 (frontend: Add Landing page and playlist Generator)
