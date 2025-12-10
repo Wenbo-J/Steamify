@@ -45,8 +45,13 @@ const Analytics = () => {
   const loadSimilarTracks = async () => {
     setLoading(prev => ({ ...prev, similar: true }));
     try {
-      const data = await getSimilarUserPlaylist(userId);
-      setSimilarTracks(Array.isArray(data) ? data : []);
+      // Only load similar tracks if user is authenticated
+      if (userId) {
+        const data = await getSimilarUserPlaylist(userId);
+        setSimilarTracks(Array.isArray(data) ? data : []);
+      } else {
+        setSimilarTracks([]);
+      }
     } catch (err) {
       console.error('Failed to load similar tracks:', err);
       setSimilarTracks([]);
@@ -146,7 +151,12 @@ const Analytics = () => {
       {/* Similar User Recommendations */}
       <div className="glass-panel p-6">
         <h2 className="text-2xl font-bold mb-4 text-white">Recommended by Similar Users</h2>
-        {loading.similar ? (
+        {!userId ? (
+          <div className="text-center py-8">
+            <p className="text-gray-400 mb-4">Sign in to see personalized recommendations based on similar users</p>
+            <p className="text-sm text-gray-500">This feature requires authentication</p>
+          </div>
+        ) : loading.similar ? (
           <div className="text-center py-8">
             <div className="w-8 h-8 border-4 border-[#1DB954] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-gray-400">Loading...</p>
