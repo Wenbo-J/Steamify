@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { getGameRecommendations, createPlaylist, getTrack } from '../services/api';
+import { getGameRecommendations, getRecommendations, createPlaylist, getTrack } from '../services/api';
 
 const GameTracks = () => {
   const { gameId } = useParams();
@@ -32,18 +32,47 @@ const GameTracks = () => {
     if (!gameId) return;
     setLoading(true);
     try {
-      const data = await getGameRecommendations(
-        gameId,
-        filters.sessionMinutes,
-        filters.minEnergy,
-        filters.maxEnergy,
-        filters.minValence,
-        filters.maxValence
-      );
+      console.log('[GameTracks] Fetching recommendations for game:', gameId);
+      
+      // First try Route 6 (recommendations from Recommendations table)
+      const route6Result = await getRecommendations(gameId);
+      console.log('[GameTracks] Route 6 result:', route6Result);
+      
+      let data = [];
+      
+      // Check if Route 6 returned data
+      if (route6Result && route6Result.data && route6Result.data.length > 0) {
+        console.log('[GameTracks] Using Route 6 results:', route6Result.data.length, 'tracks');
+        data = route6Result.data;
+      } else if (route6Result && route6Result.route6Error) {
+        console.log('[GameTracks] Route 6 had an error, trying Route 12.1...');
+        // Route 6 had an error, try Route 12.1
+        data = await getGameRecommendations(
+          gameId,
+          filters.sessionMinutes,
+          filters.minEnergy,
+          filters.maxEnergy,
+          filters.minValence,
+          filters.maxValence
+        );
+      } else {
+        // Route 6 returned empty (no recommendations in table), try Route 12.1
+        console.log('[GameTracks] Route 6 returned empty (no data in Recommendations table), trying Route 12.1 with filters...');
+        data = await getGameRecommendations(
+          gameId,
+          filters.sessionMinutes,
+          filters.minEnergy,
+          filters.maxEnergy,
+          filters.minValence,
+          filters.maxValence
+        );
+      }
+      
+      console.log('[GameTracks] Final recommendations count:', data?.length || 0);
       setRecommendations(Array.isArray(data) ? data : []);
       setSelectedTracks(new Set());
     } catch (err) {
-      console.error('Failed to generate recommendations:', err);
+      console.error('[GameTracks] Failed to generate recommendations:', err);
       setRecommendations([]);
     } finally {
       setLoading(false);

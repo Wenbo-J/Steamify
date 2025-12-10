@@ -1,4 +1,6 @@
-const BASE_URL = 'http://localhost:5000'; // Backend port
+// Use relative URLs when in development (Vite proxy handles routing)
+// Use absolute URL for production (changed to 5001 to avoid AirPlay conflict)
+const BASE_URL = import.meta.env.DEV ? '' : 'http://localhost:5001';
 
 // Helper function to handle API responses
 const handleResponse = async (res) => {
@@ -10,18 +12,37 @@ const handleResponse = async (res) => {
 };
 
 // Steam/Game Routes
-// Note: These routes may not be implemented yet in backend
-export const getAllGames = async () => {
+export const getAllGames = async (limit = 50, offset = 0, search = '') => {
   try {
-    const res = await fetch(`${BASE_URL}/games/`);
-    if (res.status === 404) {
-      console.warn('Games endpoint not implemented yet');
-      return [];
+    const params = new URLSearchParams();
+    if (limit) params.append('limit', limit.toString());
+    if (offset) params.append('offset', offset.toString());
+    if (search) params.append('search', search);
+    
+    const url = `${BASE_URL}/games/?${params.toString()}`;
+    console.log(`Fetching games from ${url}`);
+    
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    console.log(`Games response status: ${res.status}`);
+    
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error(`Games endpoint error (${res.status}):`, errorText);
+      throw new Error(`Failed to fetch games: ${res.status} ${errorText}`);
     }
-    return handleResponse(res);
+    
+    const data = await res.json();
+    console.log(`Successfully fetched ${Array.isArray(data) ? data.length : 0} games`);
+    return Array.isArray(data) ? data : [];
   } catch (err) {
     console.error('Error fetching games:', err);
-    return [];
+    throw err;
   }
 };
 
@@ -54,12 +75,19 @@ export const getAllTracks = async () => {
   // Note: This endpoint may not be implemented in backend
   // For now, return empty array or implement a workaround
   try {
+    console.log(`Fetching tracks from ${BASE_URL}/music/tracks`);
     const res = await fetch(`${BASE_URL}/music/tracks`);
     if (res.status === 404) {
       console.warn('All tracks endpoint not implemented yet');
       return [];
     }
-    return handleResponse(res);
+    if (!res.ok) {
+      console.error(`Tracks endpoint error (${res.status})`);
+      return [];
+    }
+    const data = await res.json();
+    console.log(`Successfully fetched ${Array.isArray(data) ? data.length : 0} tracks`);
+    return Array.isArray(data) ? data : [];
   } catch (err) {
     console.error('Error fetching tracks:', err);
     return [];
@@ -130,7 +158,68 @@ export const removeTrackFromPlaylist = async (playlistId, trackId) => {
 };
 
 // Recommendation Routes
-// Note: These routes may not be implemented yet in backend
+// Route 6: GET /recommends/:game_id - Returns [{game_id, track_id, match_score}]
+export const getRecommendations = async (gameId) => {
+  try {
+    console.log(`[Route 6] Fetching recommendations from ${BASE_URL}/recommends/${gameId}`);
+    const res = await fetch(`${BASE_URL}/recommends/${gameId}`);
+    
+    console.log(`[Route 6] Response status: ${res.status}`);
+    
+    if (res.status === 404) {
+      console.warn('[Route 6] Endpoint not found (404)');
+      return { route6Empty: true, data: [] };
+    }
+    
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: 'Network error' }));
+      console.error(`[Route 6] Error response (${res.status}):`, error);
+      throw new Error(error.error || error.message || `HTTP error! status: ${res.status}`);
+    }
+    
+    const recommendations = await res.json();
+    console.log(`[Route 6] Found ${recommendations.length} recommendations from Recommendations table`);
+    
+    // If empty, return special flag so we know Route 6 was called but had no data
+    if (!recommendations || recommendations.length === 0) {
+      console.log('[Route 6] No recommendations found in Recommendations table');
+      return { route6Empty: true, data: [] };
+    }
+    
+    // Fetch full track details for each recommended track
+    console.log(`[Route 6] Fetching track details for ${recommendations.length} tracks...`);
+    const trackDetails = await Promise.all(
+      recommendations.map(async (rec) => {
+        try {
+          const track = await getTrack(rec.track_id);
+          return {
+            ...track,
+            track_id: rec.track_id,
+            match_score: rec.match_score,
+            game_id: rec.game_id
+          };
+        } catch (err) {
+          console.error(`[Route 6] Error fetching track ${rec.track_id}:`, err);
+          return {
+            track_id: rec.track_id,
+            match_score: rec.match_score,
+            game_id: rec.game_id,
+            name: 'Unknown Track'
+          };
+        }
+      })
+    );
+    
+    console.log(`[Route 6] Successfully fetched ${trackDetails.length} track details`);
+    return { route6Empty: false, data: trackDetails };
+  } catch (err) {
+    console.error('[Route 6] Error:', err);
+    // Return error flag so frontend knows Route 6 failed
+    return { route6Error: true, error: err.message, data: [] };
+  }
+};
+
+// Route 12.1: GET /games/:game_id/recommended_tracks - Full track details with filters
 export const getGameRecommendations = async (gameId, sessionMinutes = 60, minEnergy = 0, maxEnergy = 100, minValence = 0, maxValence = 100) => {
   try {
     const params = new URLSearchParams({
@@ -142,13 +231,15 @@ export const getGameRecommendations = async (gameId, sessionMinutes = 60, minEne
     });
     const res = await fetch(`${BASE_URL}/games/${gameId}/recommended_tracks?${params}`);
     if (res.status === 404) {
-      console.warn('Recommendations endpoint not implemented yet');
-      return [];
+      console.warn('Recommended tracks endpoint not found, trying Route 6...');
+      // Fallback to Route 6
+      return await getRecommendations(gameId);
     }
     return handleResponse(res);
   } catch (err) {
-    console.error('Error fetching recommendations:', err);
-    return [];
+    console.error('Error fetching game recommendations:', err);
+    // Fallback to Route 6
+    return await getRecommendations(gameId);
   }
 };
 
@@ -235,46 +326,47 @@ export const getSimilarUserPlaylist = async (userId) => {
   }
 };
 
-// Authentication Routes
-// Note: These routes may not be implemented yet in backend
-export const signup = async (email, password) => {
+// Authentication Routes - Google OAuth only
+export const googleAuth = async (email, name, picture, googleId) => {
   try {
-    const res = await fetch(`${BASE_URL}/auth/signup`, {
+    const res = await fetch(`${BASE_URL}/auth/google`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, name, picture, google_id: googleId })
     });
     return handleResponse(res);
   } catch (err) {
-    console.error('Error signing up:', err);
+    console.error('Error with Google auth:', err);
     throw err;
   }
 };
 
-export const login = async (email, password) => {
+// Link Steam account (optional)
+export const linkSteamAccount = async (userId, steamId, steamName) => {
   try {
-    const res = await fetch(`${BASE_URL}/auth/login`, {
-      method: 'POST',
+    const res = await fetch(`${BASE_URL}/users/${userId}`, {
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ steam_id: steamId, steam_name: steamName })
     });
     return handleResponse(res);
   } catch (err) {
-    console.error('Error logging in:', err);
+    console.error('Error linking Steam account:', err);
     throw err;
   }
 };
 
-export const changePassword = async (userId, oldPassword, newPassword) => {
+// Link Spotify account (optional)
+export const linkSpotifyAccount = async (userId, spotifyId, spotifyName) => {
   try {
-    const res = await fetch(`${BASE_URL}/auth/password`, {
-      method: 'PUT',
+    const res = await fetch(`${BASE_URL}/users/${userId}`, {
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId, old_password: oldPassword, new_password: newPassword })
+      body: JSON.stringify({ spotify_id: spotifyId, spotify_name: spotifyName })
     });
     return handleResponse(res);
   } catch (err) {
-    console.error('Error changing password:', err);
+    console.error('Error linking Spotify account:', err);
     throw err;
   }
 };

@@ -6,28 +6,59 @@ const Home = () => {
   const [games, setGames] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(true);
+  const [offset, setOffset] = useState(0);
+  const GAMES_PER_PAGE = 20;
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const loadGames = async () => {
-      setLoading(true);
-      try {
-        const data = await getAllGames();
-        setGames(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error('Failed to load games:', err);
-        setGames([]);
-      } finally {
-        setLoading(false);
+  // Load games with pagination
+  const loadGames = async (reset = false) => {
+    if (reset) {
+      setGames([]);
+      setOffset(0);
+      setHasMore(true);
+    }
+    
+    setLoading(true);
+    try {
+      const currentOffset = reset ? 0 : offset;
+      console.log('Home: Loading games...', { searchTerm, offset: currentOffset });
+      const data = await getAllGames(GAMES_PER_PAGE, currentOffset, searchTerm);
+      console.log('Home: Games loaded:', data.length);
+      
+      if (reset) {
+        setGames(data);
+      } else {
+        setGames(prev => [...prev, ...data]);
       }
-    };
-    loadGames();
-  }, []);
+      
+      // If we got fewer games than requested, we've reached the end
+      setHasMore(data.length === GAMES_PER_PAGE);
+      setOffset(currentOffset + data.length);
+    } catch (err) {
+      console.error('Home: Failed to load games:', err);
+      alert(`Failed to load games. Please check:\n1. Backend is running on port 5001\n2. Backend is accessible\n\nError: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const filteredGames = games.filter(game =>
-    game.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Initial load and search with debounce
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      loadGames(true);
+    }, searchTerm ? 500 : 0); // Debounce only when searching
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  // Load more games (infinite scroll)
+  const loadMore = () => {
+    if (!loading && hasMore) {
+      loadGames(false);
+    }
+  };
 
   const handleGameSelect = (game) => {
     // Navigate to tracks page with game ID
@@ -64,20 +95,21 @@ const Home = () => {
       </div>
 
       {/* Games Grid */}
-      {loading ? (
+      {loading && games.length === 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
             <div key={n} className="h-64 bg-white/5 rounded-xl border border-white/10 animate-pulse"></div>
           ))}
         </div>
-      ) : filteredGames.length === 0 ? (
+      ) : games.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-gray-400 text-xl mb-2">No games found</p>
           <p className="text-gray-500 text-sm">Try adjusting your search</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredGames.map((game, index) => (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {games.map((game, index) => (
             <div
               key={game.game_id}
               onClick={() => handleGameSelect(game)}
@@ -87,21 +119,16 @@ const Home = () => {
               {/* Premium hover glow effect */}
               <div className="absolute inset-0 bg-gradient-to-br from-[#1DB954]/0 via-[#1B2838]/0 to-[#2a475e]/0 group-hover:from-[#1DB954]/15 group-hover:via-[#1B2838]/15 group-hover:to-[#2a475e]/15 transition-all duration-500 pointer-events-none z-10"></div>
               
-              {/* Premium Image / Header */}
-              <div className="h-52 md:h-56 bg-gradient-to-br from-[#1a2332] via-[#233447] to-[#1f2838] relative overflow-hidden">
-                {/* Subtle pattern overlay */}
-                <div className="absolute inset-0 opacity-[0.15] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" style={{ mixBlendMode: 'overlay' }}></div>
+              {/* Game Icon/Initial - No image, just a styled initial */}
+              <div className="h-32 md:h-36 bg-gradient-to-br from-[#1DB954] via-[#53C8F3] to-[#1B2838] relative overflow-hidden flex items-center justify-center">
+                {/* Game initial or first letter */}
+                <div className="text-6xl md:text-7xl font-black text-white/30 select-none">
+                  {(game.name || 'G').charAt(0).toUpperCase()}
+                </div>
                 
-                {/* Premium gradient overlays */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-[#1DB954]/15 to-transparent group-hover:via-[#1DB954]/25 transition-all duration-500"></div>
-                <div className="absolute inset-0 bg-gradient-to-br from-[#1B2838]/0 to-[#1B2838]/40 group-hover:to-[#1B2838]/50 transition-all duration-500"></div>
-                
-                {/* Shine effect on hover */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                
-                {/* Premium Rating Badge */}
+                {/* Rating badge if available */}
                 {game.rating && (
-                  <div className="absolute top-4 right-4 bg-gradient-to-br from-black/90 to-black/70 backdrop-blur-xl text-xs font-black px-4 py-2 rounded-xl text-white border border-[#1DB954]/40 shadow-2xl shadow-[#1DB954]/20 group-hover:border-[#1DB954] group-hover:shadow-[#1DB954]/40 group-hover:scale-105 transition-all duration-300">
+                  <div className="absolute top-3 right-3 bg-black/80 backdrop-blur-md text-xs font-black px-3 py-1.5 rounded-lg text-white border border-[#1DB954]/40 shadow-lg">
                     {game.rating}%
                   </div>
                 )}
@@ -125,8 +152,35 @@ const Home = () => {
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+          
+          {/* Load More Button */}
+          {hasMore && (
+            <div className="flex justify-center mt-8">
+              <button
+                onClick={loadMore}
+                disabled={loading}
+                className="btn-secondary px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Loading...
+                  </span>
+                ) : (
+                  'Load More Games'
+                )}
+              </button>
+            </div>
+          )}
+          
+          {!hasMore && games.length > 0 && (
+            <div className="text-center mt-8 text-[#A5A5A5] text-sm">
+              No more games to load
+            </div>
+          )}
+        </>
       )}
 
       {/* Premium Stats Footer */}
@@ -135,7 +189,7 @@ const Home = () => {
           <div className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#1DB954] to-white mb-3 group-hover:from-[#1ed760] transition-all duration-300">
             {games.length}
           </div>
-          <div className="text-xs sm:text-sm text-[#A5A5A5] uppercase tracking-widest font-bold">Games Available</div>
+          <div className="text-xs sm:text-sm text-[#A5A5A5] uppercase tracking-widest font-bold">Games Loaded</div>
         </div>
         <div className="text-center group">
           <div className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#53C8F3] to-[#EDEDED] mb-3 group-hover:from-[#66C0F4] transition-all duration-300">
