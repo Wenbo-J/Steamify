@@ -27,7 +27,7 @@ const track = async function(req, res) {
 
   connection.query(`
     SELECT *
-    FROM spotify_tracks
+    FROM "Spotify"
     WHERE track_id = $1
   `, [track_id], (err, data) => {
     if (err) {
@@ -42,41 +42,28 @@ const track = async function(req, res) {
   )
 }
 
-// Route 2: GET /random
-const random = async function(req, res) {
-  // you can use a ternary operator to check the value of request query values
-  // which can be particularly useful for setting the default value of queries
-  // note if users do not provide a value for the query it will be undefined, which is falsey
-  const explicit = req.query.explicit === 'true' ? 1 : 0;
+// Route 2.4: Post /music/playlists/:playlist_id/track
+const insertTrack = async function(req, res) {
 
-  // Here is a complete example of how to query the database in JavaScript.
-  // Only a small change (unrelated to querying) is required for TASK 3 in this route.
-  connection.query(`
-    SELECT *
-    FROM Songs
-    WHERE explicit <= ${explicit}
-    ORDER BY RANDOM()
-    LIMIT 1
-  `, (err, data) => {
+  const playlist_id = req.params.playlist_id;
+  const {track_id} = req.body.track_id;
+
+  const sqlQuery = `
+    INSERT INTO Contains (playlist_id, track_id)
+    VALUES ($1, $2)
+    RETURNING playlist_id, track_id
+  `;
+
+  connection.query(sqlQuery, [playlist_id, track_id], (err, data) => {
     if (err) {
-      // If there is an error for some reason, print the error message and
-      // return an empty object instead
       console.log(err);
-      // Be cognizant of the fact we return an empty object {}. For future routes, depending on the
-      // return type you may need to return an empty array [] instead.
       res.json({});
     } else {
-      // Here, we return results of the query as an object, keeping only relevant data
-      // being song_id and title which you will add. In this case, there is only one song
-      // so we just directly access the first element of the query results array (data.rows[0])
-      // TODO (TASK 3): also return the song title in the response
-      res.json({
-        song_id: data.rows[0].song_id,
-        title: data.rows[0].title
-      });
+      res.json({message: `Track ${track_id} has been added to playlist ${playlist_id} successfully.`});
     }
-  });
+  })
 }
+
 
 // Route 3: GET /song/:song_id
 const song = async function(req, res) {
