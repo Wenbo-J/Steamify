@@ -54,11 +54,11 @@ function App() {
   // Wrap with GoogleOAuthProvider only if client ID is available
   const appContent = (
     <AuthProvider>
-      <Router>
-        <Layout>
+    <Router>
+      <Layout>
           <AppRoutes />
-        </Layout>
-      </Router>
+      </Layout>
+    </Router>
     </AuthProvider>
   );
 

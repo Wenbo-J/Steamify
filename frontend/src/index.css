@@ -306,7 +306,7 @@ input[type=range]:hover::-webkit-slider-runnable-track {
   transition: opacity 0.3s ease;
 }
 
-.btn-secondary:hover {
+.btn-secondary:hover { 
   background: linear-gradient(135deg, rgba(27, 40, 56, 0.7) 0%, rgba(18, 24, 33, 0.7) 100%);
   border-color: var(--steam-cyan);
   color: #FFFFFF;
