@@ -147,20 +147,17 @@ const get_genre_audio_profile = async function (req, res) {
 
   const query = `
     SELECT
-       gg.genre AS game_genre,
-       COUNT(DISTINCT r.track_id)          AS num_tracks,
-       ROUND(AVG(sp.tempo))               AS avg_tempo,
-       ROUND(AVG(sp.energy))              AS avg_energy,
-       ROUND(AVG(sp.valence))             AS avg_valence,
-       ROUND(AVG(sp.danceability))        AS avg_danceability,
-       ROUND(AVG(sp.acousticness))        AS avg_acousticness,
-       ROUND(AVG(sp.popularity))          AS avg_popularity
-    FROM "GameGen" gg
-        JOIN "Steam"            s  ON s.game_id  = gg.game_id
-        JOIN "Recommendations" r  ON r.game_id  = gg.game_id
-        JOIN "Spotify"         sp ON sp.track_id = r.track_id
-    GROUP BY gg.genre
-    HAVING COUNT(DISTINCT r.track_id) >= 50
+      game_genre,
+      COUNT(DISTINCT track_id)          AS num_tracks,
+      ROUND(AVG(tempo))               AS avg_tempo,
+      ROUND(AVG(energy))              AS avg_energy,
+      ROUND(AVG(valence))             AS avg_valence,
+      ROUND(AVG(danceability))        AS avg_danceability,
+      ROUND(AVG(acousticness))        AS avg_acousticness,
+      ROUND(AVG(popularity))          AS avg_popularity
+    FROM stat
+    GROUP BY game_genre
+    HAVING COUNT(DISTINCT track_id) >= 50
     ORDER BY avg_popularity DESC;
   `;
 
@@ -188,56 +185,28 @@ const get_genre_audio_profile = async function (req, res) {
  */
 const get_top_genre_pairs = async function (req, res) {
   const query = `
-    WITH steam_to_spotify_genres AS (
-      -- Map each Steam genre to its possible Spotify genres via GenMap
-      SELECT DISTINCT
-          gg.genre        AS game_genre,    -- Steam genre
-          gm.track_genre  AS spotify_genre  -- mapped Spotify genre
-      FROM "GameGen" gg
-      JOIN "GenMap" gm
-        ON LOWER(gg.genre) = LOWER(gm.game_genre)
-    ),
-    genre_pair_tracks AS (
-      SELECT
-        ssg.game_genre,
-        ssg.spotify_genre,
-        r.track_id
-      FROM steam_to_spotify_genres ssg
-      JOIN "GameGen" gg2
-        ON gg2.genre = ssg.game_genre
-      JOIN "Recommendations" r
-        ON r.game_id = gg2.game_id
-      JOIN "MusicGen" mg
-        ON mg.track_id = r.track_id
-       AND LOWER(mg.genre) = LOWER(ssg.spotify_genre)
-    ),
-    agg_pairs AS (
-      SELECT
-        game_genre,
-        spotify_genre,
-        COUNT(DISTINCT track_id) AS num_tracks
-      FROM genre_pair_tracks
-      GROUP BY game_genre, spotify_genre
-    ),
-    ranked_pairs AS (
-      -- Rank Spotify genres within each Steam genre by number of tracks
-      SELECT
-        game_genre,
-        spotify_genre,
-        num_tracks,
-        ROW_NUMBER() OVER (
-          PARTITION BY game_genre
-          ORDER BY num_tracks DESC
-        ) AS genre_rank
-      FROM agg_pairs
-    )
-    SELECT
-      game_genre,      -- Steam genre
-      spotify_genre,   -- top Spotify genre(s) for that Steam genre
-      num_tracks
-    FROM ranked_pairs
-    WHERE genre_rank <= 3
-    ORDER BY game_genre, num_tracks DESC;
+   WITH agg_pairs AS (SELECT game_genre,
+                          track_genre,
+                          COUNT(DISTINCT track_id) AS num_tracks
+                   FROM genre_pair_tracks
+                   GROUP BY game_genre, track_genre
+                   ORDER BY game_genre, track_genre, num_tracks),
+        ranked_pairs AS (
+            -- Rank Spotify genres within each Steam genre by number of tracks
+            SELECT game_genre,
+                    track_genre,
+                    num_tracks,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY game_genre
+                        ORDER BY num_tracks DESC
+                        ) AS genre_rank
+            FROM agg_pairs)
+  SELECT game_genre,                   -- Steam genre
+        track_genre AS spotify_genre, -- top Spotify genre(s) for that Steam genre
+        num_tracks
+  FROM ranked_pairs
+  WHERE genre_rank <= 3
+  ORDER BY game_genre, num_tracks DESC;
   `;
 
   try {
