@@ -116,8 +116,8 @@ describe('GameTracks Component', () => {
     const durationInput = screen.getByDisplayValue('60');
     fireEvent.change(durationInput, { target: { value: '5' } });
 
-    // Click apply filters
-    const applyButton = screen.getByText(/apply filters/i);
+    // Click apply duration filter
+    const applyButton = screen.getByText(/apply duration filter/i);
     fireEvent.click(applyButton);
 
     await waitFor(() => {
@@ -233,7 +233,7 @@ describe('GameTracks Component', () => {
 
   it('should handle filter changes', async () => {
     const mockTracks = [
-      { track_id: 'track1', name: 'Track 1', duration: 180, energy: 0.8, valence: 0.7 }
+      { track_id: 'track1', name: 'Track 1', duration: 180 }
     ];
     api.getRecommendations.mockResolvedValue({
       data: mockTracks
@@ -249,11 +249,18 @@ describe('GameTracks Component', () => {
       expect(screen.getByText('Track 1')).toBeInTheDocument();
     });
 
-    // Change energy filter
-    const energyInputs = screen.getAllByRole('slider');
-    if (energyInputs.length > 0) {
-      fireEvent.change(energyInputs[0], { target: { value: '50' } });
-    }
+    // Change duration filter
+    const durationInput = screen.getByDisplayValue('60');
+    fireEvent.change(durationInput, { target: { value: '30' } });
+    
+    // Click apply duration filter
+    const applyButton = screen.getByText(/apply duration filter/i);
+    fireEvent.click(applyButton);
+
+    // Verify the filter was applied (track should still be visible since 180s < 30*60s)
+    await waitFor(() => {
+      expect(screen.getByText('Track 1')).toBeInTheDocument();
+    });
   });
 
   it('should switch between tabs', async () => {
