@@ -10,9 +10,9 @@ if (!rootElement) {
   console.error('Root element not found!');
 } else {
   createRoot(rootElement).render(
-    <StrictMode>
-      <App />
-    </StrictMode>,
+  <StrictMode>
+    <App />
+  </StrictMode>,
   );
   console.log('Steamify: App rendered');
 }

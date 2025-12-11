@@ -14,11 +14,7 @@ const GameTracks = () => {
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
-    sessionMinutes: 60,
-    minEnergy: 0,
-    maxEnergy: 100,
-    minValence: 0,
-    maxValence: 100
+    sessionMinutes: 60
   });
   const [selectedTracks, setSelectedTracks] = useState(new Set());
   const [playlistName, setPlaylistName] = useState('');
@@ -252,56 +248,12 @@ const GameTracks = () => {
                   className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#1DB954]"
                 />
               </div>
-              <div>
-                <label className="text-label block mb-2">Min Energy: {filters.minEnergy}</label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={filters.minEnergy}
-                  onChange={(e) => setFilters({ ...filters, minEnergy: parseInt(e.target.value) })}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="text-label block mb-2">Max Energy: {filters.maxEnergy}</label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={filters.maxEnergy}
-                  onChange={(e) => setFilters({ ...filters, maxEnergy: parseInt(e.target.value) })}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="text-label block mb-2">Min Valence: {filters.minValence}</label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={filters.minValence}
-                  onChange={(e) => setFilters({ ...filters, minValence: parseInt(e.target.value) })}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="text-label block mb-2">Max Valence: {filters.maxValence}</label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={filters.maxValence}
-                  onChange={(e) => setFilters({ ...filters, maxValence: parseInt(e.target.value) })}
-                  className="w-full"
-                />
-              </div>
               <button
                 onClick={handleGenerate}
                 disabled={loading}
                 className="w-full btn-primary"
               >
-                {loading ? 'Generating...' : 'Apply Filters'}
+                {loading ? 'Generating...' : 'Apply Duration Filter'}
               </button>
             </div>
           </div>
@@ -348,7 +300,7 @@ const GameTracks = () => {
             ) : recommendations.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-gray-500">
                 <p className="text-xl mb-2">No recommendations found</p>
-                <p className="text-sm">Try adjusting your filters</p>
+                <p className="text-sm">Try adjusting the duration filter</p>
               </div>
             ) : (
               <div className="space-y-4">
