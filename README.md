@@ -1,6 +1,6 @@
 # Steamify
 
-A web application that recommends Spotify tracks based on Steam games, creating personalized gaming playlists.
+A web app that recommends Spotify tracks based on Steam games, creating personalized gaming playlists.
 
 ## Features
 
@@ -97,8 +97,7 @@ Frontend runs on `http://localhost:5173`
 - `/recommends/:game_id` - Game recommendations (Route 6)
 - `/analytics` - Music analytics endpoints
 - `/auth/google` - Google authentication
-<<<<<<< Updated upstream
-=======
+
 
 ## Testing
 
