@@ -52,7 +52,7 @@ const Layout = ({ children }) => {
 
         <div className="hidden md:flex items-center gap-4">
           <div className="flex gap-2 bg-gradient-to-r from-white/[0.03] to-white/[0.01] p-1.5 rounded-2xl border border-white/10 backdrop-blur-2xl shadow-2xl">
-            <NavLink to="/" label="Home" />
+          <NavLink to="/" label="Home" />
             <NavLink to="/browse" label="Browse Music" />
             <NavLink to="/analytics" label="Analytics" />
             {isAuthenticated && (
