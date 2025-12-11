@@ -7,6 +7,7 @@ const Analytics = () => {
   const [topGenres, setTopGenres] = useState([]);
   const [similarTracks, setSimilarTracks] = useState([]);
   const [loading, setLoading] = useState({ profile: false, genres: false, similar: false });
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const { user } = useAuth();
   const userId = user?.user_id;
 
@@ -27,6 +28,46 @@ const Analytics = () => {
     } finally {
       setLoading(prev => ({ ...prev, profile: false }));
     }
+  };
+
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortedProfile = () => {
+    if (!sortConfig.key) return audioProfile;
+
+    return [...audioProfile].sort((a, b) => {
+      let aVal = a[sortConfig.key];
+      let bVal = b[sortConfig.key];
+
+      // Handle null/undefined values
+      if (aVal == null) aVal = sortConfig.key === 'game_genre' ? '' : -Infinity;
+      if (bVal == null) bVal = sortConfig.key === 'game_genre' ? '' : -Infinity;
+
+      // String comparison for game_genre
+      if (sortConfig.key === 'game_genre') {
+        const comparison = aVal.localeCompare(bVal);
+        return sortConfig.direction === 'asc' ? comparison : -comparison;
+      }
+
+      // Numeric comparison for all other fields
+      const comparison = Number(aVal) - Number(bVal);
+      return sortConfig.direction === 'asc' ? comparison : -comparison;
+    });
+  };
+
+  const getSortIcon = (columnKey) => {
+    if (sortConfig.key !== columnKey) {
+      return <span className="text-gray-500 ml-1">↕</span>;
+    }
+    return sortConfig.direction === 'asc' 
+      ? <span className="text-[#1DB954] ml-1">↑</span>
+      : <span className="text-[#1DB954] ml-1">↓</span>;
   };
 
   const loadTopGenres = async () => {
@@ -95,18 +136,82 @@ const Analytics = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-white/10">
-                  <th className="text-left py-3 px-4 text-label">Game Genre</th>
-                  <th className="text-left py-3 px-4 text-label">Tracks</th>
-                  <th className="text-left py-3 px-4 text-label">Avg Tempo</th>
-                  <th className="text-left py-3 px-4 text-label">Avg Energy</th>
-                  <th className="text-left py-3 px-4 text-label">Avg Valence</th>
-                  <th className="text-left py-3 px-4 text-label">Avg Danceability</th>
-                  <th className="text-left py-3 px-4 text-label">Avg Acousticness</th>
-                  <th className="text-left py-3 px-4 text-label">Avg Popularity</th>
+                  <th 
+                    className="text-left py-3 px-4 text-label cursor-pointer hover:bg-white/5 transition-colors select-none"
+                    onClick={() => handleSort('game_genre')}
+                  >
+                    <div className="flex items-center">
+                      Game Genre
+                      {getSortIcon('game_genre')}
+                    </div>
+                  </th>
+                  <th 
+                    className="text-left py-3 px-4 text-label cursor-pointer hover:bg-white/5 transition-colors select-none"
+                    onClick={() => handleSort('num_tracks')}
+                  >
+                    <div className="flex items-center">
+                      Tracks
+                      {getSortIcon('num_tracks')}
+                    </div>
+                  </th>
+                  <th 
+                    className="text-left py-3 px-4 text-label cursor-pointer hover:bg-white/5 transition-colors select-none"
+                    onClick={() => handleSort('avg_tempo')}
+                  >
+                    <div className="flex items-center">
+                      Avg Tempo
+                      {getSortIcon('avg_tempo')}
+                    </div>
+                  </th>
+                  <th 
+                    className="text-left py-3 px-4 text-label cursor-pointer hover:bg-white/5 transition-colors select-none"
+                    onClick={() => handleSort('avg_energy')}
+                  >
+                    <div className="flex items-center">
+                      Avg Energy
+                      {getSortIcon('avg_energy')}
+                    </div>
+                  </th>
+                  <th 
+                    className="text-left py-3 px-4 text-label cursor-pointer hover:bg-white/5 transition-colors select-none"
+                    onClick={() => handleSort('avg_valence')}
+                  >
+                    <div className="flex items-center">
+                      Avg Valence
+                      {getSortIcon('avg_valence')}
+                    </div>
+                  </th>
+                  <th 
+                    className="text-left py-3 px-4 text-label cursor-pointer hover:bg-white/5 transition-colors select-none"
+                    onClick={() => handleSort('avg_danceability')}
+                  >
+                    <div className="flex items-center">
+                      Avg Danceability
+                      {getSortIcon('avg_danceability')}
+                    </div>
+                  </th>
+                  <th 
+                    className="text-left py-3 px-4 text-label cursor-pointer hover:bg-white/5 transition-colors select-none"
+                    onClick={() => handleSort('avg_acousticness')}
+                  >
+                    <div className="flex items-center">
+                      Avg Acousticness
+                      {getSortIcon('avg_acousticness')}
+                    </div>
+                  </th>
+                  <th 
+                    className="text-left py-3 px-4 text-label cursor-pointer hover:bg-white/5 transition-colors select-none"
+                    onClick={() => handleSort('avg_popularity')}
+                  >
+                    <div className="flex items-center">
+                      Avg Popularity
+                      {getSortIcon('avg_popularity')}
+                    </div>
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {audioProfile.map((genre, idx) => (
+                {getSortedProfile().map((genre, idx) => (
                   <tr key={idx} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                     <td className="py-3 px-4 text-white font-semibold">{genre.game_genre || 'Unknown'}</td>
                     <td className="py-3 px-4 text-gray-300">{genre.num_tracks?.toLocaleString() || 0}</td>
