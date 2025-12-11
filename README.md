@@ -130,9 +130,3 @@ Watch mode:
 ```bash
 npm run test:watch
 ```
-
-## License
-
-ISC
-
->>>>>>> Stashed changes
