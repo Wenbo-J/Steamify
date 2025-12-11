@@ -51,7 +51,14 @@ Backend runs on `http://localhost:5001`
 
 ```bash
 cd frontend
-npm install
+npm install --legacy-peer-deps
+```
+
+**Note**: Use `--legacy-peer-deps` flag due to React 19 compatibility with testing libraries. This is expected and safe to use.
+
+If you encounter issues with `@vitest/coverage-v8` when running tests, install it separately:
+```bash
+npm install --legacy-peer-deps -D @vitest/coverage-v8@^1.0.4
 ```
 
 Create `.env`:
@@ -90,3 +97,42 @@ Frontend runs on `http://localhost:5173`
 - `/recommends/:game_id` - Game recommendations (Route 6)
 - `/analytics` - Music analytics endpoints
 - `/auth/google` - Google authentication
+<<<<<<< Updated upstream
+=======
+
+## Testing
+
+### Backend Tests
+
+```bash
+cd backend
+npm test
+```
+
+Run with coverage:
+```bash
+npm test -- --coverage
+```
+
+### Frontend Tests
+
+```bash
+cd frontend
+npm test
+```
+
+Run with coverage:
+```bash
+npm test -- --coverage
+```
+
+Watch mode:
+```bash
+npm run test:watch
+```
+
+## License
+
+ISC
+
+>>>>>>> Stashed changes
