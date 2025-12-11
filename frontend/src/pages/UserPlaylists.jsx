@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getUserPlaylists, getPlaylist, getPlaylistTracks, deletePlaylist, createPlaylist } from '../services/api';
+import { getUserPlaylists, getPlaylist, getPlaylistTracks, deletePlaylist, createPlaylist, unsavePlaylist } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { getLocalPlaylists, deleteLocalPlaylist, getLocalPlaylist } from '../utils/localPlaylists';
 
@@ -115,9 +115,15 @@ const UserPlaylists = () => {
         deleteLocalPlaylist(playlistId);
         setTempPlaylists(tempPlaylists.filter(p => p.playlist_id !== playlistId));
       } else {
-        // Delete saved playlist
-        await deletePlaylist(playlistId);
-        setSavedPlaylists(savedPlaylists.filter(p => p.playlist_id !== playlistId));
+        // Delete saved playlist - unsave it for the user
+        if (!userId) {
+          alert('User ID not found');
+          return;
+        }
+        await unsavePlaylist(playlistId, userId);
+        // Reload saved playlists to ensure UI is in sync with backend
+        const data = await getUserPlaylists(userId);
+        setSavedPlaylists(Array.isArray(data) ? data : []);
       }
       if (selectedPlaylist?.playlist_id === playlistId) {
         setSelectedPlaylist(null);
