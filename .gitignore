@@ -28,5 +28,6 @@ build/
 .DS_Store
 Thumbs.db
 
-# Config (if sensitive)
-# config.json
+# Config (sensitive information)
+backend/config.json
+frontend/.env
