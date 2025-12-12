@@ -148,6 +148,20 @@ export const deletePlaylist = async (playlistId) => {
   }
 };
 
+export const renamePlaylist = async (playlistId, playlistName) => {
+  try {
+    const res = await fetch(`${BASE_URL}/music/playlists/${playlistId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ playlist_name: playlistName })
+    });
+    return handleResponse(res);
+  } catch (err) {
+    console.error('Error renaming playlist:', err);
+    throw err;
+  }
+};
+
 export const addTrackToPlaylist = async (playlistId, trackId) => {
   try {
     const res = await fetch(`${BASE_URL}/music/playlists/${playlistId}/tracks`, {

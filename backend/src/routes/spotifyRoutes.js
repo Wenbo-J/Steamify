@@ -232,6 +232,42 @@ const deletePlaylist = async function(req, res) {
   });
 };
 
+// Route 2.4: PATCH /music/playlists/:playlist_id
+// Description: Update a playlist's name in the database given a playlist_id and new playlist_name
+const renamePlaylist = async function(req, res) {
+  const playlist_id = req.params.playlist_id;
+  const { playlist_name } = req.body;
+
+  if (!playlist_name) {
+    console.log('playlist_name is required');
+    res.status(400).json({ error: 'playlist_name is required' });
+    return;
+  }
+
+  connection.query(`
+    UPDATE "Playlist" 
+    SET playlist_name = $1
+    WHERE playlist_id = $2
+    RETURNING playlist_id, playlist_name, total_duration_minutes, total_tracks
+  `, [playlist_name, playlist_id], (err, data) => {
+    if (err) {
+      console.error('Error renaming playlist:', err);
+      res.status(500).json({ error: 'Database error', message: err.message });
+    } else if (data.rows.length === 0) {
+      console.log('Playlist not found');
+      res.status(404).json({ error: 'Playlist not found' });
+    } else {
+      res.json({
+        playlist_id: data.rows[0].playlist_id,
+        playlist_name: data.rows[0].playlist_name,
+        total_duration_minutes: data.rows[0].total_duration_minutes,
+        total_tracks: data.rows[0].total_tracks,
+        message: 'Playlist renamed successfully'
+      });
+    }
+  });
+};
+
 // Route 3.1: POST /music/playlists/:playlist_id/tracks
 // Description: Given a playlist_id and track_id, insert the song into Contains
 const insertTrackFromPlaylist = async function(req, res) {
@@ -513,6 +549,7 @@ module.exports = {
   getPlaylistTracks,
   createPlaylist,
   deletePlaylist,
+  renamePlaylist,
   insertTrackFromPlaylist,
   deleteTrackFromPlaylist,
   savePlaylist,

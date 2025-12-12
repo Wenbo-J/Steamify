@@ -32,6 +32,7 @@ app.get("/music/tracks", spotifyRoutes.getAllTracks);
 app.get("/music/playlists/:playlist_id", spotifyRoutes.playlist);
 app.get("/music/playlists/:playlist_id/tracks", spotifyRoutes.getPlaylistTracks);
 app.post("/music/playlists", spotifyRoutes.createPlaylist);
+app.patch("/music/playlists/:playlist_id", spotifyRoutes.renamePlaylist);
 app.delete("/music/playlists/:playlist_id", spotifyRoutes.deletePlaylist);
 app.post("/music/playlists/:playlist_id/tracks", spotifyRoutes.insertTrackFromPlaylist);
 app.delete("/music/playlists/:playlist_id/tracks", spotifyRoutes.deleteTrackFromPlaylist);

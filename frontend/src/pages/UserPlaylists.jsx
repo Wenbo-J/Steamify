@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getUserPlaylists, getPlaylist, getPlaylistTracks, deletePlaylist, createPlaylist, unsavePlaylist } from '../services/api';
+import { getUserPlaylists, getPlaylist, getPlaylistTracks, deletePlaylist, createPlaylist, unsavePlaylist, renamePlaylist } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { getLocalPlaylists, deleteLocalPlaylist, getLocalPlaylist } from '../utils/localPlaylists';
 
@@ -141,12 +141,14 @@ const UserPlaylists = () => {
   };
 
   const handleRenameSave = async () => {
-    // Note: You'll need to implement a PATCH endpoint for renaming
-    // For now, just update locally
-    if (selectedPlaylist) {
-      setSelectedPlaylist({ ...selectedPlaylist, playlist_name: newPlaylistName });
+    if (!selectedPlaylist) {
+      setEditingName(false);
+      return;
+    }
+
+    try {
       if (selectedPlaylist.is_temporary) {
-        // Update temporary playlist
+        // Update temporary playlist in localStorage
         const updated = tempPlaylists.map(p =>
           p.playlist_id === selectedPlaylist.playlist_id
             ? { ...p, playlist_name: newPlaylistName }
@@ -154,17 +156,25 @@ const UserPlaylists = () => {
         );
         setTempPlaylists(updated);
         localStorage.setItem('steamify_temp_playlists', JSON.stringify(updated));
+        setSelectedPlaylist({ ...selectedPlaylist, playlist_name: newPlaylistName });
       } else {
-        // Update saved playlist
+        // Update saved playlist via API
+        await renamePlaylist(selectedPlaylist.playlist_id, newPlaylistName);
+        
+        // Update local state
         const updated = savedPlaylists.map(p =>
           p.playlist_id === selectedPlaylist.playlist_id
             ? { ...p, playlist_name: newPlaylistName }
             : p
         );
         setSavedPlaylists(updated);
+        setSelectedPlaylist({ ...selectedPlaylist, playlist_name: newPlaylistName });
       }
+      setEditingName(false);
+    } catch (err) {
+      console.error('Failed to rename playlist:', err);
+      alert('Failed to rename playlist: ' + (err.message || 'Unknown error'));
     }
-    setEditingName(false);
   };
 
   const allPlaylists = [...savedPlaylists, ...tempPlaylists];
