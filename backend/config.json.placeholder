@@ -1,0 +1,10 @@
+{
+  "rds_host": "your-rds-hostname.region.rds.amazonaws.com",
+  "rds_port": "5432",
+  "rds_user": "your-database-username",
+  "rds_password": "your-database-password",
+  "rds_db": "your-database-name",
+  "server_host": "localhost",
+  "server_port": "8080"
+}
+
