@@ -86,8 +86,8 @@ Frontend runs on `http://localhost:5173`
 │   │   ├── components/    # Reusable components
 │   │   ├── services/      # API service layer
 │   │   └── contexts/      # React contexts
-│   └── .env               # Environment variables
-└── query/                  # SQL queries
+│   └── .env               # For Google OAuth
+└── query/                 # SQL queries
 ```
 
 ## API Routes
